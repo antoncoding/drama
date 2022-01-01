@@ -4,7 +4,7 @@ import {
   Routes,
   Route
 } from "react-router-dom";
-import { Main, Bar } from '@aragon/ui'
+import { Main, Bar, TextInput, IconSearch } from '@aragon/ui'
 import { Account } from './pages/Account'
 import { Home } from './pages/Home'
 
@@ -12,7 +12,13 @@ function App() {
   return (
     <div>
       <Bar
-        // primary={<BackButton />}
+        primary={<div > Decoder </div>}
+        secondary={
+          <TextInput 
+            wide={true} 
+            adornmentPosition="end"
+            adornment={<IconSearch/>}
+        />}
       />
       <Main>
 

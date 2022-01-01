@@ -1,7 +1,14 @@
-import { Header } from '@aragon/ui'
+import { Header, useTheme } from '@aragon/ui'
 
 export function Home(props: any) {
-  return (<div>
+
+  const theme = useTheme()
+
+  return (<div
+    css={`
+      color: ${theme.surfaceContentSecondary};
+    `}
+  >
     <Header primary="Home"></Header>
   </div>)
 }
