@@ -18,10 +18,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "react",
     "noImplicitAny": false,
+    "downlevelIteration": true
   },
   "include": [
-    "src"
+    "src/**/*"
   ]
 }

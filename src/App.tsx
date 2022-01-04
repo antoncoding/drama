@@ -1,41 +1,33 @@
-import React from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route
-} from "react-router-dom";
-import { Main, Bar, TextInput, IconSearch } from '@aragon/ui'
-import { Account } from './pages/Account'
-import { Home } from './pages/Home'
+import React from "react";
+import { HashRouter as Router, Switch, Route } from "react-router-dom";
+import { Main, Bar, TextInput, IconSearch } from "@aragon/ui";
+import { Account } from "./pages/Account";
+import { Home } from "./pages/Home";
 
 function App() {
   return (
-    <div>
+    <Router>
       <Bar
-        primary={<div > Decoder </div>}
+        primary={<div> Decoder </div>}
         secondary={
-          <TextInput 
-            wide={true} 
+          <TextInput
+            wide={true}
             adornmentPosition="end"
-            adornment={<IconSearch/>}
-        />}
+            adornment={<IconSearch />}
+          />
+        }
       />
       <Main>
-
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/account/:address"
-              element={<Account />}
-            />
-            <Route
-              path="/"
-              element={<Home />}
-            />
-          </Routes>
-        </BrowserRouter>
+        <Switch>
+          <Route path="/account/:address">
+            <Account />
+          </Route>
+          <Route path="/">
+            <Home />
+          </Route>
+        </Switch>
       </Main>
-    </div>
+    </Router>
   );
 }
 
