@@ -6,7 +6,7 @@ import {
   useHistory,
   useLocation,
 } from "react-router-dom";
-import { Main, Bar, ToastHub, LinkBase } from "@aragon/ui";
+import { Main, Bar, ToastHub, ButtonBase } from "@aragon/ui";
 import { Account } from "./pages/Account";
 import { Home } from "./pages/Home";
 import { Title3 } from "./components/aragon";
@@ -17,8 +17,6 @@ function SubApp() {
 
   const location = useLocation();
 
-  console.log(`location`, location);
-
   const isHomePage = useMemo(() => location.pathname === "/", [location]);
 
   return (
@@ -26,9 +24,9 @@ function SubApp() {
       <Bar>
         <div style={{ display: "flex", padding: 10 }}>
           <div>
-            <LinkBase onClick={() => history.push("/")}>
+            <ButtonBase onClick={() => history.push("/")}>
               <Title3> Pizzino </Title3>
-            </LinkBase>
+            </ButtonBase>
           </div>
 
           {!isHomePage && (

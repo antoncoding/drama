@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 
-import { EthIdenticon } from "@aragon/ui";
+import { EthIdenticon, LoadingRing } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
@@ -10,19 +10,25 @@ import { MessageCard } from "../../components/MessageCard";
 import { EtherscanTx } from "../../types";
 
 export function Account(props: any) {
+  const [isLoading, setLoading] = useState(true);
+
   const { address } = useParams();
 
   const rawMessages = useAsyncMemo(
     async () => {
+      console.log(`triggered`);
       if (!address) return [];
-      return getMessages(address);
+      setLoading(true);
+      const messages = await getMessages(address);
+      setLoading(false);
+      return messages;
     },
     [address],
     []
   );
 
   const messageCards = rawMessages.map((tx: EtherscanTx) => (
-    <MessageCard tx={tx} key={tx.hash} />
+    <MessageCard tx={tx} key={tx.hash} account={address} />
   ));
 
   const isEmpty = useMemo(
@@ -36,8 +42,8 @@ export function Account(props: any) {
       {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
       <br />
       <br />
-      {isEmpty && `No on-chain message found for this account.`}
-      {messageCards}
+      {isEmpty && !isLoading && `No on-chain message found for this account.`}
+      {isLoading ? <LoadingRing /> : messageCards}
     </div>
   );
 }

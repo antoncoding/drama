@@ -1,15 +1,35 @@
 import React from "react";
 import { EtherscanTx } from "../../types";
-import { Box, IdentityBadge, IconExternal, LinkBase } from "@aragon/ui";
+import { Box, IdentityBadge, IconExternal, ButtonBase } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
 
-export function MessageCard({ tx }: { tx: EtherscanTx }) {
+export function MessageCard({
+  tx,
+  account,
+}: {
+  tx: EtherscanTx;
+  account: string;
+}) {
   const msg = input_to_ascii(tx.input);
+
+  const isInput = tx.to.toLowerCase() === account;
+
   return msg.length === 0 ? null : (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
-        <IdentityBadge entity={tx.from} /> - {timeSince(parseInt(tx.timeStamp))}
+        {isInput ? (
+          <div>
+            From <IdentityBadge entity={tx.from} /> -{" "}
+            {timeSince(parseInt(tx.timeStamp))}
+          </div>
+        ) : (
+          <div>
+            To <IdentityBadge entity={tx.to} /> -{" "}
+            {timeSince(parseInt(tx.timeStamp))}
+          </div>
+        )}
+
         {/* external link, fix at top right corner */}
         <div
           style={{
@@ -18,7 +38,7 @@ export function MessageCard({ tx }: { tx: EtherscanTx }) {
             right: 0,
           }}
         >
-          <LinkBase
+          <ButtonBase
             onClick={() =>
               (window as any)
                 .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
@@ -26,7 +46,7 @@ export function MessageCard({ tx }: { tx: EtherscanTx }) {
             }
           >
             <IconExternal />
-          </LinkBase>
+          </ButtonBase>
         </div>
       </div>
       <Body2
@@ -34,7 +54,7 @@ export function MessageCard({ tx }: { tx: EtherscanTx }) {
           whiteSpace: "pre-line",
         }}
       >
-        {input_to_ascii(tx.input).replace(" ", "\n")}
+        {input_to_ascii(tx.input)}
       </Body2>
     </Box>
   );

@@ -36,6 +36,7 @@ export function SearchInput(props: any) {
         adornmentPosition={"end"}
         adornment={
           <Button
+            label=""
             onClick={handleClick}
             size="small"
             mode={"strong"}
