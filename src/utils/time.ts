@@ -6,7 +6,6 @@
 export function timeSince(timeStamp: number) {
   const now = Date.now() / 1000;
   const secondsPast = now - timeStamp;
-  console.log(`second p`, secondsPast);
   if (secondsPast < 60) {
     return `${parseInt(secondsPast.toString(), 10)}s ago`;
   }

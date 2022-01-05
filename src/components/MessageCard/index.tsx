@@ -5,11 +5,12 @@ import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
 
 export function MessageCard({ tx }: { tx: EtherscanTx }) {
-  return (
+  const msg = input_to_ascii(tx.input);
+  return msg.length === 0 ? null : (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
         <IdentityBadge entity={tx.from} /> - {timeSince(parseInt(tx.timeStamp))}
-        {/* external link */}
+        {/* external link, fix at top right corner */}
         <div
           style={{
             position: "absolute",
@@ -28,18 +29,25 @@ export function MessageCard({ tx }: { tx: EtherscanTx }) {
           </LinkBase>
         </div>
       </div>
-      <Body2>
-        {input_to_ascii(tx.input)}
-        <br />
-        {}
+      <Body2
+        style={{
+          whiteSpace: "pre-line",
+        }}
+      >
+        {input_to_ascii(tx.input).replace(" ", "\n")}
       </Body2>
     </Box>
   );
 }
 
 function input_to_ascii(str1: string) {
-  const hex = str1.slice(2);
-  return decodeURIComponent(
-    hex.replace(/\s+/g, "").replace(/[0-9a-f]{2}/g, "%$&")
-  );
+  if (str1 === "0x00") return "";
+  try {
+    const hex = str1.slice(2);
+    return decodeURIComponent(
+      hex.replace(/\s+/g, "").replace(/[0-9a-f]{2}/g, "%$&")
+    );
+  } catch {
+    return "";
+  }
 }

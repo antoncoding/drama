@@ -72,9 +72,7 @@ export async function getTransactions(account: string) {
 
   const filtered = txs
     .filter((tx) => tx.contractAddress === "") // it's not a contract creation tx
-    .filter(
-      (tx) => parseInt(tx.gasUsed) > 21000 && parseInt(tx.gasUsed) < 40000
-    )
+    .filter((tx) => parseInt(tx.gasUsed) > 21000)
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
   return filtered;
 }

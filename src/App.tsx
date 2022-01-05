@@ -1,15 +1,25 @@
 import React from "react";
-import { HashRouter as Router, Switch, Route } from "react-router-dom";
-import { Main, Bar, TextInput, IconSearch } from "@aragon/ui";
+import {
+  HashRouter as Router,
+  Switch,
+  Route,
+  useHistory,
+} from "react-router-dom";
+import { Main, Bar, TextInput, IconSearch, LinkBase } from "@aragon/ui";
 import { Account } from "./pages/Account";
 import { Home } from "./pages/Home";
 import { Title3 } from "./components/aragon";
 
-function App() {
+function SubApp() {
+  const history = useHistory();
   return (
-    <Router>
+    <div>
       <Bar
-        primary={<Title3> Pizzino </Title3>}
+        primary={
+          <LinkBase onClick={() => history.push("/")}>
+            <Title3> Pizzino </Title3>
+          </LinkBase>
+        }
         secondary={
           <TextInput
             wide={true}
@@ -29,6 +39,14 @@ function App() {
         </Switch>
         <div style={{ paddingTop: "100px" }}></div>
       </Main>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <SubApp />
     </Router>
   );
 }

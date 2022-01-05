@@ -1,16 +1,20 @@
 import React from "react";
-import { Header, useTheme } from "@aragon/ui";
+import { useTheme } from "@aragon/ui";
+
+import { Title2 } from "../../components/aragon";
 
 export function Home(props: any) {
   const theme = useTheme();
 
   return (
     <div
-      css={`
-        color: ${theme.surfaceContentSecondary};
-      `}
+      style={{
+        paddingTop: "1%",
+        color: `${theme.surfaceContentSecondary}`,
+      }}
     >
-      <Header primary="Home"></Header>
+      {/* eslint-disable-next-line jsx-a11y/accessible-emoji */}
+      <Title2> Welcome to Pizzino 🎫 </Title2>
     </div>
   );
 }
