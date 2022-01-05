@@ -6,6 +6,14 @@ const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
 );
 
+export function validate_addr(address: string) {
+  return web3.utils.isAddress(address);
+}
+
+export function validate_txhash(hash: string) {
+  return /^0x([A-Fa-f0-9]{64})$/.test(hash);
+}
+
 /**
  * get all tx that are utf-8 messages
  * @param account
@@ -28,8 +36,6 @@ async function getNewContractMap(toAddresses: string[]) {
   const newAddresses = distinctAddresses.filter(
     (addr) => map[addr] === undefined
   );
-
-  console.log("new addresses", newAddresses);
 
   for (const address of newAddresses) {
     const isContract = await getIsContract(address);

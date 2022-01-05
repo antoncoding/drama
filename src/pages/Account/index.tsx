@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 import { EthIdenticon } from "@aragon/ui";
 import { useParams } from "react-router-dom";
@@ -25,12 +25,18 @@ export function Account(props: any) {
     <MessageCard tx={tx} key={tx.hash} />
   ));
 
+  const isEmpty = useMemo(
+    () => messageCards.filter((c) => c !== null).length === 0,
+    [messageCards]
+  );
+
   return (
     <div>
       <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
       {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
       <br />
       <br />
+      {isEmpty && `No on-chain message found for this account.`}
       {messageCards}
     </div>
   );
