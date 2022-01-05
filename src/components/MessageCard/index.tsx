@@ -1,18 +1,38 @@
 import React from "react";
 import { EtherscanTx } from "../../types";
-import { Box } from "@aragon/ui";
-import { Body3 } from "../aragon";
+import { Box, IdentityBadge, IconExternal, LinkBase } from "@aragon/ui";
+import { timeSince } from "../../utils/time";
+import { Body2 } from "../aragon";
 
 export function MessageCard({ tx }: { tx: EtherscanTx }) {
   return (
     <Box>
-      <Body3>
+      <div style={{ paddingBottom: "1%", position: "relative" }}>
+        <IdentityBadge entity={tx.from} /> - {timeSince(parseInt(tx.timeStamp))}
+        {/* external link */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+          }}
+        >
+          <LinkBase
+            onClick={() =>
+              (window as any)
+                .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
+                .focus()
+            }
+          >
+            <IconExternal />
+          </LinkBase>
+        </div>
+      </div>
+      <Body2>
         {input_to_ascii(tx.input)}
         <br />
         {}
-        <br />
-        {tx.hash}
-      </Body3>
+      </Body2>
     </Box>
   );
 }

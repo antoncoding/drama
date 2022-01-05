@@ -1,8 +1,8 @@
 import React from "react";
-import { Header, IdentityBadge } from "@aragon/ui";
+
+import { EthIdenticon } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
-import { Title3 } from "../../components/aragon";
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 import { getMessages } from "../../utils/web3";
 
@@ -27,10 +27,10 @@ export function Account(props: any) {
 
   return (
     <div>
-      <Header
-        primary={<Title3>Account {<IdentityBadge entity={address} />}</Title3>}
-      ></Header>
-
+      <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
+      {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
+      <br />
+      <br />
       {messageCards}
     </div>
   );

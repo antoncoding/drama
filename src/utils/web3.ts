@@ -64,9 +64,8 @@ function storeContractMap(map: { [key: string]: boolean }) {
  * @returns
  */
 export async function getTransactions(account: string) {
-  console.log(`process.env.ETHERSCAN_KEY`, process.env.REACT_APP_ETHERSCAN_KEY);
   const endpoint =
-    `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=0&endblock=99999999&page=1&offset=1000&sort=desc
+    `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc
   &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
   const res = await fetch(endpoint);
   const txs = (await res.json()).result as EtherscanTx[];
@@ -75,7 +74,8 @@ export async function getTransactions(account: string) {
     .filter((tx) => tx.contractAddress === "") // it's not a contract creation tx
     .filter(
       (tx) => parseInt(tx.gasUsed) > 21000 && parseInt(tx.gasUsed) < 40000
-    );
+    )
+    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
   return filtered;
 }
 
