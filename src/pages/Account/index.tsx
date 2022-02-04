@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 
-import { EthIdenticon, LoadingRing } from "@aragon/ui";
+import { EthIdenticon, LoadingRing, Tag } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
-import { getMessages } from "../../utils/web3";
+import { getENS, getMessages } from "../../utils/web3";
 
 import { MessageCard } from "../../components/MessageCard";
 import { EtherscanTx } from "../../types";
@@ -16,7 +16,6 @@ export function Account(props: any) {
 
   const rawMessages = useAsyncMemo(
     async () => {
-      console.log(`triggered`);
       if (!address) return [];
       setLoading(true);
       const messages = await getMessages(address);
@@ -25,6 +24,14 @@ export function Account(props: any) {
     },
     [address],
     []
+  );
+
+  const ensName = useAsyncMemo(
+    async () => {
+      return await getENS(address);
+    },
+    [address],
+    undefined
   );
 
   const messageCards = rawMessages.map((tx: EtherscanTx) => (
@@ -39,6 +46,7 @@ export function Account(props: any) {
   return (
     <div>
       <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
+      {ensName && <Tag> {ensName} </Tag>}
       {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
       <br />
       <br />
