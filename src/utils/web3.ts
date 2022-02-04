@@ -88,12 +88,14 @@ export async function getTransactions(account: string) {
     const currentBlock = await web3.eth.getBlockNumber();
     let endBlock = currentBlock;
 
-    const batch = 500_000;
+    // assume there won't be more than 10_000 tx in 500_000 block
+    const batch = 1000_000;
 
     let startBlock = endBlock - batch;
     let searching = true;
 
     while (searching) {
+      console.log(`searching block ${startBlock} => ${endBlock}`);
       const pagedEndpoint =
         `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=${startBlock}&endblock=${endBlock}&offset=10000&page=1&sort=asc
     &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
