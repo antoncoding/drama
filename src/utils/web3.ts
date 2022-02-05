@@ -1,10 +1,15 @@
 import Web3 from "web3";
-
 import { EtherscanTx } from "../types";
+import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 
 const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
 );
+
+const ens = new ENS({
+  provider: web3.currentProvider,
+  ensAddress: getEnsAddress("1"),
+});
 
 export function validate_addr(address: string) {
   return web3.utils.isAddress(address);
@@ -40,8 +45,6 @@ async function getNewContractMap(toAddresses: string[]) {
   for (const address of newAddresses) {
     const isContract = await getIsContract(address);
 
-    console.log(`isContract`, isContract);
-
     map[address] = isContract; // modify object directly
   }
 
@@ -70,16 +73,50 @@ function storeContractMap(map: { [key: string]: boolean }) {
  * @returns
  */
 export async function getTransactions(account: string) {
+  let txs: EtherscanTx[] = [];
+
   const endpoint =
-    `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc
+    `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=0&endblock=99999999&offset=10000&sort=asc
   &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
   const res = await fetch(endpoint);
-  const txs = (await res.json()).result as EtherscanTx[];
+
+  txs = (await res.json()).result as EtherscanTx[];
+  if (txs.length === 10000) {
+    // need to recursive search to get full history
+    txs = [];
+
+    const currentBlock = await web3.eth.getBlockNumber();
+    let endBlock = currentBlock;
+
+    // assume there won't be more than 10_000 tx in 500_000 block
+    const batch = 1000_000;
+
+    let startBlock = endBlock - batch;
+    let searching = true;
+
+    while (searching) {
+      console.log(`searching block ${startBlock} => ${endBlock}`);
+      const pagedEndpoint =
+        `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=${startBlock}&endblock=${endBlock}&offset=10000&page=1&sort=asc
+    &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
+
+      const res = await fetch(pagedEndpoint);
+      const pageTxs = (await res.json()).result as EtherscanTx[];
+
+      startBlock = startBlock - batch - 1;
+      endBlock = startBlock - batch;
+
+      txs = txs.concat(pageTxs);
+
+      if (startBlock < 0) searching = false;
+    }
+  }
 
   const filtered = txs
     .filter((tx) => tx.contractAddress === "") // it's not a contract creation tx
     .filter((tx) => parseInt(tx.gasUsed) > 21000)
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+
   return filtered;
 }
 
@@ -93,6 +130,23 @@ export async function getIsContract(address: string) {
   return code !== "0x";
 }
 
-export async function getENS(account: string) {
-  return "hackwhale.eth";
+export async function parseENS(string: string) {
+  if (!string.includes(".eth")) return false;
+  try {
+    const address = await ens.name(string).getAddress();
+    return address as string;
+  } catch (error) {
+    return undefined;
+  }
+}
+
+export async function getENS(address: string) {
+  if (!web3.utils.isAddress(address)) return undefined;
+  try {
+    const { name: ensName } = await ens.getName(address);
+    return ensName as string | null;
+  } catch (error) {
+    console.log(`getENS error`, error);
+    return null;
+  }
 }

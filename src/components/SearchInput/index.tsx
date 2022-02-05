@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useCallback } from "react";
 import { TextInput, Button, IconSearch, useToast } from "@aragon/ui";
 import { useHistory } from "react-router-dom";
-import { validate_addr, validate_txhash } from "../../utils/web3";
+import { parseENS, validate_addr, validate_txhash } from "../../utils/web3";
+import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 
 export function SearchInput(props: any) {
   const toast = useToast();
@@ -13,6 +14,14 @@ export function SearchInput(props: any) {
     return validate_addr(input);
   }, [input]);
 
+  const reversed = useAsyncMemo(
+    async () => {
+      return await parseENS(input);
+    },
+    [input],
+    undefined
+  );
+
   const inputIsTransaction = useMemo(() => {
     return validate_txhash(input);
   }, [input]);
@@ -20,11 +29,13 @@ export function SearchInput(props: any) {
   const handleClick = useCallback(() => {
     if (inputIsAddress) {
       history.push(`/account/${input}`);
+    } else if (reversed !== undefined) {
+      history.push(`/account/${reversed}`);
     } else if (inputIsTransaction) {
       toast("Transaction page coming soon!");
       // history.push(`/tx/${input}`)
     }
-  }, [inputIsAddress, inputIsTransaction, history, input, toast]);
+  }, [inputIsAddress, inputIsTransaction, history, input, toast, reversed]);
 
   return (
     <div>
@@ -36,12 +47,13 @@ export function SearchInput(props: any) {
         adornmentPosition={"end"}
         adornment={
           <Button
-            label=""
+            label="search"
             onClick={handleClick}
             size="small"
             mode={"strong"}
+            display={"icon"}
             icon={<IconSearch />}
-            disabled={!inputIsAddress && !inputIsTransaction}
+            disabled={!inputIsAddress && !inputIsTransaction && !reversed}
           ></Button>
         }
       />

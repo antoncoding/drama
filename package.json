@@ -5,6 +5,7 @@
   "dependencies": {
     "@aragon/ui": "^1.7.0",
     "@babel/runtime": "^7.12.0",
+    "@ensdomains/ensjs": "^2.0.1",
     "@types/jest": "^24.0.0",
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.38",
@@ -12,7 +13,6 @@
     "bignumber.js": "^9.0.1",
     "bnc-notify": "^1.4.0",
     "bnc-onboard": "^1.18.0",
-    "ethereum-ens": "^0.8.0",
     "ethers": "^5.0.32",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",

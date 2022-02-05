@@ -1,8 +1,10 @@
 import React from "react";
 import { EtherscanTx } from "../../types";
-import { Box, IdentityBadge, IconExternal, ButtonBase } from "@aragon/ui";
+import { Box, IdentityBadge, TransactionBadge, ButtonBase } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
+import { getENS } from "../../utils/web3";
+import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 
 export function MessageCard({
   tx,
@@ -13,19 +15,29 @@ export function MessageCard({
 }) {
   const msg = input_to_ascii(tx.input);
 
-  const isInput = tx.to.toLowerCase() === account;
+  const isInput = tx.to.toLowerCase() === account.toLowerCase();
 
-  return msg.length === 0 ? null : (
+  const ens = useAsyncMemo(
+    async () => {
+      const fromOrTo = isInput ? tx.from : tx.to;
+      return await getENS(fromOrTo);
+    },
+    [tx.from, tx.to, account],
+    undefined
+  );
+
+  // return msg.length === 0 ? null : (
+  return (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
         {isInput ? (
           <div>
-            From <IdentityBadge entity={tx.from} /> -{" "}
+            From <IdentityBadge entity={tx.from} label={ens} /> -{" "}
             {timeSince(parseInt(tx.timeStamp))}
           </div>
         ) : (
           <div>
-            To <IdentityBadge entity={tx.to} /> -{" "}
+            To <IdentityBadge entity={tx.to} label={ens} /> -{" "}
             {timeSince(parseInt(tx.timeStamp))}
           </div>
         )}
@@ -45,7 +57,7 @@ export function MessageCard({
                 .focus()
             }
           >
-            <IconExternal />
+            <TransactionBadge transaction={tx.hash} />
           </ButtonBase>
         </div>
       </div>
@@ -54,7 +66,7 @@ export function MessageCard({
           whiteSpace: "pre-line",
         }}
       >
-        {input_to_ascii(tx.input)}
+        {msg}
       </Body2>
     </Box>
   );
