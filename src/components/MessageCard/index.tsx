@@ -1,6 +1,6 @@
 import React from "react";
 import { EtherscanTx } from "../../types";
-import { Box, IdentityBadge, IconExternal, ButtonBase } from "@aragon/ui";
+import { Box, IdentityBadge, TransactionBadge, ButtonBase } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
 import { getENS } from "../../utils/web3";
@@ -15,7 +15,7 @@ export function MessageCard({
 }) {
   const msg = input_to_ascii(tx.input);
 
-  const isInput = tx.to.toLowerCase() === account;
+  const isInput = tx.to.toLowerCase() === account.toLowerCase();
 
   const ens = useAsyncMemo(
     async () => {
@@ -57,7 +57,7 @@ export function MessageCard({
                 .focus()
             }
           >
-            <IconExternal />
+            <TransactionBadge transaction={tx.hash} />
           </ButtonBase>
         </div>
       </div>

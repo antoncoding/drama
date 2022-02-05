@@ -45,13 +45,22 @@ export function Account(props: any) {
 
   return (
     <div>
-      <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
-      {ensName && <Tag> {ensName} </Tag>}
-      {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
-      <br />
-      <br />
-      {isEmpty && !isLoading && `No on-chain message found for this account.`}
-      {isLoading ? <LoadingRing /> : messageCards}
+      <div style={{ display: "flex" }}>
+        <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
+        {ensName && (
+          <div style={{ paddingLeft: 30 }}>
+            {" "}
+            <Tag> {ensName} </Tag>{" "}
+          </div>
+        )}
+      </div>
+      <div>
+        {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
+        <br />
+        <br />
+        {isEmpty && !isLoading && `No on-chain message found for this account.`}
+        {isLoading ? <LoadingRing /> : messageCards}
+      </div>
     </div>
   );
 }
