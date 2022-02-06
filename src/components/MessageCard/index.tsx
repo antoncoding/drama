@@ -5,6 +5,8 @@ import { timeSince } from "../../utils/time";
 import { input_to_ascii } from "../../utils/web3";
 import { Body2 } from "../aragon";
 import { Avatar } from "../Avatar";
+import { TwitterTweetEmbed } from "react-twitter-embed";
+import { parseTwitterStatusId } from "../../utils/media";
 
 export function MessageCard({
   tx,
@@ -20,6 +22,10 @@ export function MessageCard({
     [account, tx]
   );
   const theme = useTheme();
+
+  const twitterStatusId = useMemo(() => {
+    return parseTwitterStatusId(msg);
+  }, [msg]);
 
   return msg.length === 0 ? null : (
     <Box>
@@ -71,6 +77,11 @@ export function MessageCard({
         }}
       >
         {msg}
+
+        {/* show tweet embed */}
+        <div>
+          {twitterStatusId && <TwitterTweetEmbed tweetId={twitterStatusId} />}
+        </div>
       </Body2>
     </Box>
   );
