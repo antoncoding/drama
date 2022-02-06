@@ -1,18 +1,21 @@
 import React, { useMemo, useState } from "react";
 
-import { EthIdenticon, LoadingRing, Tag } from "@aragon/ui";
+import { LoadingRing, useTheme } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
-import { getENS, getMessages } from "../../utils/web3";
+import { getENS, getEthBalance, getMessages } from "../../utils/web3";
 
 import { MessageCard } from "../../components/MessageCard";
 import { EtherscanTx } from "../../types";
+import { Avatar } from "../../components/Avatar";
 
 export function Account(props: any) {
   const [isLoading, setLoading] = useState(true);
 
   const { address } = useParams();
+
+  const theme = useTheme();
 
   const rawMessages = useAsyncMemo(
     async () => {
@@ -34,6 +37,26 @@ export function Account(props: any) {
     undefined
   );
 
+  const ethBalance = useAsyncMemo(
+    async () => {
+      const exactBalance = await getEthBalance(address);
+      if (exactBalance === null) return "0";
+      const balanceSplit = exactBalance.split(".");
+      if (balanceSplit.length === 1) return exactBalance;
+      const integer = exactBalance.split(".")[0];
+      const decimals = exactBalance.split(".")[1].slice(0, 4);
+      return `${integer}.${decimals}`;
+    },
+    [address],
+    undefined
+  );
+
+  const totalSent = useMemo(() => {
+    return rawMessages.filter(
+      (tx) => tx.from.toLowerCase() === address.toLowerCase()
+    ).length;
+  }, [address, rawMessages]);
+
   const messageCards = rawMessages.map((tx: EtherscanTx) => (
     <MessageCard tx={tx} key={tx.hash} account={address} />
   ));
@@ -43,20 +66,63 @@ export function Account(props: any) {
     [messageCards]
   );
 
+  const shortenAddress = useMemo(() => {
+    return address.slice(0, 4).concat("...").concat(address.slice(-4));
+  }, [address]);
+
   return (
     <div>
       <div style={{ display: "flex" }}>
-        <EthIdenticon address={address} scale={2} radius={2} soften={0.2} />
-        {ensName && (
-          <div style={{ paddingLeft: 30 }}>
-            {" "}
-            <Tag> {ensName} </Tag>{" "}
-          </div>
-        )}
+        <Avatar account={address} ensName={ensName} />
+        <div>
+          {
+            <div
+              style={{
+                paddingLeft: 5,
+                paddingTop: 5,
+                fontSize: 18,
+                marginTop: "auto",
+                marginBottom: "auto",
+                color: theme.surfaceContentSecondary,
+              }}
+            >
+              {" "}
+              {ensName || shortenAddress}{" "}
+            </div>
+          }
+          {
+            <div
+              style={{
+                paddingLeft: 5,
+                paddingTop: 5,
+                fontSize: 14,
+                marginTop: "auto",
+                marginBottom: "auto",
+                color: theme.surfaceContentSecondary,
+              }}
+            >
+              {" "}
+              Balance: {ethBalance} ETH{" "}
+            </div>
+          }
+          {
+            <div
+              style={{
+                paddingLeft: 5,
+                paddingTop: 5,
+                fontSize: 14,
+                marginTop: "auto",
+                marginBottom: "auto",
+                color: theme.surfaceContentSecondary,
+              }}
+            >
+              {" "}
+              Total sent {totalSent}{" "}
+            </div>
+          }
+        </div>
       </div>
       <div>
-        {/* <Title3>Account {<IdentityBadge entity={address} />}</Title3> */}
-        <br />
         <br />
         {isEmpty && !isLoading && `No on-chain message found for this account.`}
         {isLoading ? <LoadingRing /> : messageCards}

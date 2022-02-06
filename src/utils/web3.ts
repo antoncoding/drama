@@ -1,9 +1,15 @@
 import Web3 from "web3";
 import { EtherscanTx } from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
+import { ethers, providers } from "ethers";
 
-const web3 = new Web3(
+export const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
+);
+
+export const etherProvider = new providers.InfuraProvider(
+  1,
+  process.env.REACT_APP_INFURA_KEY
 );
 
 const ens = new ENS({
@@ -103,8 +109,8 @@ export async function getTransactions(account: string) {
       const res = await fetch(pagedEndpoint);
       const pageTxs = (await res.json()).result as EtherscanTx[];
 
-      startBlock = startBlock - batch - 1;
-      endBlock = startBlock - batch;
+      endBlock = startBlock - 1;
+      startBlock = endBlock - batch;
 
       txs = txs.concat(pageTxs);
 
@@ -134,6 +140,8 @@ export async function parseENS(string: string) {
   if (!string.includes(".eth")) return false;
   try {
     const address = await ens.name(string).getAddress();
+    if (address === "0x0000000000000000000000000000000000000000")
+      return undefined;
     return address as string;
   } catch (error) {
     return undefined;
@@ -141,12 +149,40 @@ export async function parseENS(string: string) {
 }
 
 export async function getENS(address: string) {
-  if (!web3.utils.isAddress(address)) return undefined;
+  if (!web3.utils.isAddress(address)) return null;
   try {
     const { name: ensName } = await ens.getName(address);
     return ensName as string | null;
   } catch (error) {
     console.log(`getENS error`, error);
+    return null;
+  }
+}
+
+export async function getEthBalance(address: string) {
+  try {
+    const balance = await etherProvider.getBalance(address);
+    return ethers.utils.formatEther(balance);
+  } catch (error) {
+    console.log(`getEthBalance error`, error);
+    return null;
+  }
+}
+
+export async function getAddressAvatar(address: string) {
+  const ensName = await getENS(address);
+  if (!ensName) return null;
+  return await getAvatar(ensName);
+}
+
+export async function getAvatar(ensName: string) {
+  try {
+    const resolver = await etherProvider.getResolver(ensName);
+    const avatar = await resolver?.getText("avatar");
+    if (!avatar || avatar.length === 0) return null;
+    return avatar;
+  } catch (error) {
+    console.log(`get Avatar error`, error);
     return null;
   }
 }

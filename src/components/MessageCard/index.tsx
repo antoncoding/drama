@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { EtherscanTx } from "../../types";
-import { Box, IdentityBadge, TransactionBadge, ButtonBase } from "@aragon/ui";
+import { Box, TransactionBadge, ButtonBase, useTheme } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
-import { getENS } from "../../utils/web3";
-import { useAsyncMemo } from "../../hooks/useAsyncMemo";
+import { Avatar } from "../Avatar";
 
 export function MessageCard({
   tx,
@@ -15,32 +14,36 @@ export function MessageCard({
 }) {
   const msg = input_to_ascii(tx.input);
 
-  const isInput = tx.to.toLowerCase() === account.toLowerCase();
-
-  const ens = useAsyncMemo(
-    async () => {
-      const fromOrTo = isInput ? tx.from : tx.to;
-      return await getENS(fromOrTo);
-    },
-    [tx.from, tx.to, account],
-    undefined
+  const isIncoming = useMemo(
+    () => tx.to.toLowerCase() === account.toLowerCase(),
+    [account, tx]
   );
+  const theme = useTheme();
 
-  // return msg.length === 0 ? null : (
-  return (
+  return msg.length === 0 ? null : (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
-        {isInput ? (
-          <div>
-            From <IdentityBadge entity={tx.from} label={ens} /> -{" "}
-            {timeSince(parseInt(tx.timeStamp))}
+        <div style={{ display: "flex" }}>
+          <div
+            style={{
+              marginTop: "auto",
+              marginBottom: "auto",
+              paddingRight: 5,
+              color: theme.surfaceContentSecondary,
+            }}
+          >
+            {" "}
+            [ {isIncoming ? "In" : "Out"} ]{" "}
           </div>
-        ) : (
-          <div>
-            To <IdentityBadge entity={tx.to} label={ens} /> -{" "}
-            {timeSince(parseInt(tx.timeStamp))}
+          <div style={{ marginTop: "auto", marginBottom: "auto" }}> From </div>
+          <Avatar account={tx.from} scale={1} size={30} />
+          <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
+          <Avatar account={tx.to} scale={1} size={30} />
+          <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+            {" "}
+            - {timeSince(parseInt(tx.timeStamp))}{" "}
           </div>
-        )}
+        </div>
 
         {/* external link, fix at top right corner */}
         <div
