@@ -21,7 +21,7 @@ export function Account(props: any) {
     async () => {
       if (!address) return [];
       setLoading(true);
-      const messages = await getMessages(address);
+      const messages = await getMessages(address, true);
       setLoading(false);
       return messages;
     },
@@ -51,10 +51,12 @@ export function Account(props: any) {
     undefined
   );
 
-  const totalSent = useMemo(() => {
-    return rawMessages.filter(
+  const [totalSent, totalReceived] = useMemo(() => {
+    const sent = rawMessages.filter(
       (tx) => tx.from.toLowerCase() === address.toLowerCase()
     ).length;
+    const received = rawMessages.length - sent;
+    return [sent, received];
   }, [address, rawMessages]);
 
   const messageCards = rawMessages.map((tx: EtherscanTx) => (
@@ -116,8 +118,9 @@ export function Account(props: any) {
                 color: theme.surfaceContentSecondary,
               }}
             >
-              {" "}
-              Total sent {totalSent}{" "}
+              {isLoading
+                ? "Loading"
+                : `Total sent: ${totalSent}, total received: ${totalReceived}`}
             </div>
           }
         </div>

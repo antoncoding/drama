@@ -2,6 +2,7 @@ import Web3 from "web3";
 import { EtherscanTx } from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 import { ethers, providers } from "ethers";
+import { spammers } from "./constant";
 
 export const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
@@ -29,8 +30,10 @@ export function validate_txhash(hash: string) {
  * get all tx that are utf-8 messages
  * @param account
  */
-export async function getMessages(account: string) {
-  const txs = await getTransactions(account);
+export async function getMessages(account: string, hideSpam: boolean) {
+  const txs = (await getTransactions(account)).filter((tx) => {
+    return hideSpam && !spammers.includes(tx.from.toLocaleLowerCase());
+  });
 
   const toAddresses = txs.map((t) => t.to);
 
