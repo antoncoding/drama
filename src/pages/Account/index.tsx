@@ -79,7 +79,7 @@ export function Account(props: any) {
   }, [address, rawMessages]);
 
   const messageCards = messagesToShow.map((tx: EtherscanTx) => (
-    <MessageCard tx={tx} key={tx.hash} account={address} />
+    <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
   ));
 
   const isEmpty = useMemo(
