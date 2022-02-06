@@ -31,15 +31,32 @@ export function validate_txhash(hash: string) {
  * @param account
  */
 export async function getMessages(account: string, hideSpam: boolean) {
-  const txs = (await getTransactions(account)).filter((tx) => {
-    return hideSpam && !spammers.includes(tx.from.toLocaleLowerCase());
-  });
+  const txs = (await getTransactions(account))
+    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
+    .filter((tx) => input_to_ascii(tx.input) !== "");
 
   const toAddresses = txs.map((t) => t.to);
 
   const contractMap = await getNewContractMap(toAddresses);
 
   return txs.filter((tx) => contractMap[tx.to] === false);
+}
+
+/**
+ * parse transaction input into UTF8 text
+ * @param str1
+ * @returns
+ */
+export function input_to_ascii(str1: string) {
+  if (str1 === "0x00") return "";
+  try {
+    const hex = str1.slice(2);
+    return decodeURIComponent(
+      hex.replace(/\s+/g, "").replace(/[0-9a-f]{2}/g, "%$&")
+    );
+  } catch {
+    return "";
+  }
 }
 
 async function getNewContractMap(toAddresses: string[]) {

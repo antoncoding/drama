@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-import { LoadingRing, useTheme } from "@aragon/ui";
+import { LoadingRing, useTheme, Button } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
@@ -10,12 +10,20 @@ import { MessageCard } from "../../components/MessageCard";
 import { EtherscanTx } from "../../types";
 import { Avatar } from "../../components/Avatar";
 
+enum DisplayMode {
+  All,
+  Sent,
+  Received,
+}
+
 export function Account(props: any) {
   const [isLoading, setLoading] = useState(true);
 
   const { address } = useParams();
 
   const theme = useTheme();
+
+  const [mode, setMode] = useState<DisplayMode>(DisplayMode.All);
 
   const rawMessages = useAsyncMemo(
     async () => {
@@ -28,6 +36,17 @@ export function Account(props: any) {
     [address],
     []
   );
+
+  const messagesToShow = useMemo(() => {
+    return rawMessages.filter((tx) => {
+      if (mode === DisplayMode.All) return true;
+      if (mode === DisplayMode.Sent)
+        return tx.from.toLowerCase() === address.toLowerCase();
+      if (mode === DisplayMode.Received)
+        return tx.to.toLowerCase() === address.toLowerCase();
+      return false;
+    });
+  }, [rawMessages, mode, address]);
 
   const ensName = useAsyncMemo(
     async () => {
@@ -59,7 +78,7 @@ export function Account(props: any) {
     return [sent, received];
   }, [address, rawMessages]);
 
-  const messageCards = rawMessages.map((tx: EtherscanTx) => (
+  const messageCards = messagesToShow.map((tx: EtherscanTx) => (
     <MessageCard tx={tx} key={tx.hash} account={address} />
   ));
 
@@ -124,10 +143,51 @@ export function Account(props: any) {
             </div>
           }
         </div>
+
+        {/* This div is for putting the bottom group at the bottom-right */}
+        <div style={{ flexGrow: 100, display: "flex", position: "relative" }}>
+          <div style={{ position: "absolute", bottom: 0, right: 0 }}>
+            <Button
+              size="mini"
+              mode={mode === DisplayMode.All ? "positive" : "normal"}
+              onClick={() => setMode(DisplayMode.All)}
+            >
+              {" "}
+              All{" "}
+            </Button>
+            <Button
+              size="mini"
+              mode={mode === DisplayMode.Sent ? "positive" : "normal"}
+              onClick={() => setMode(DisplayMode.Sent)}
+            >
+              {" "}
+              Sent{" "}
+            </Button>
+            <Button
+              size="mini"
+              mode={mode === DisplayMode.Received ? "positive" : "normal"}
+              onClick={() => setMode(DisplayMode.Received)}
+            >
+              {" "}
+              Received{" "}
+            </Button>
+          </div>
+        </div>
       </div>
       <div>
         <br />
-        {isEmpty && !isLoading && `No on-chain message found for this account.`}
+        {isEmpty &&
+          !isLoading &&
+          mode === DisplayMode.All &&
+          `No on-chain message found for this account.`}
+        {isEmpty &&
+          !isLoading &&
+          mode === DisplayMode.Received &&
+          `No on-chain message received for this account.`}
+        {isEmpty &&
+          !isLoading &&
+          mode === DisplayMode.Sent &&
+          `No on-chain message sent from this account.`}
         {isLoading ? <LoadingRing /> : messageCards}
       </div>
     </div>

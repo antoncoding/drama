@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { EtherscanTx } from "../../types";
 import { Box, TransactionBadge, ButtonBase, useTheme } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
+import { input_to_ascii } from "../../utils/web3";
 import { Body2 } from "../aragon";
 import { Avatar } from "../Avatar";
 
@@ -73,16 +74,4 @@ export function MessageCard({
       </Body2>
     </Box>
   );
-}
-
-function input_to_ascii(str1: string) {
-  if (str1 === "0x00") return "";
-  try {
-    const hex = str1.slice(2);
-    return decodeURIComponent(
-      hex.replace(/\s+/g, "").replace(/[0-9a-f]{2}/g, "%$&")
-    );
-  } catch {
-    return "";
-  }
 }
