@@ -2,6 +2,8 @@ import Web3 from "web3";
 import { EtherscanTx } from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 import { ethers, providers } from "ethers";
+
+import { storeContractMap, getStoredContractMap } from "./storage";
 import { spammers } from "./constant";
 
 export const web3 = new Web3(
@@ -77,20 +79,6 @@ async function getNewContractMap(toAddresses: string[]) {
   storeContractMap(map);
 
   return map;
-}
-
-function getStoredContractMap() {
-  const key = "isContract";
-  const str = localStorage.getItem(key);
-  const obj = str !== null ? JSON.parse(str) : {};
-
-  return obj as { [key: string]: boolean };
-}
-
-function storeContractMap(map: { [key: string]: boolean }) {
-  const key = "isContract";
-  const str = JSON.stringify(map);
-  localStorage.setItem(key, str);
 }
 
 /**
