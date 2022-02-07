@@ -1,4 +1,4 @@
-import { EtherscanTx } from "../types";
+import { EtherscanTxWithParsedMessage } from "../types";
 
 export function getStoredContractMap() {
   const key = "isContract";
@@ -15,15 +15,15 @@ export function storeContractMap(map: { [key: string]: boolean }) {
 }
 
 export function getLikedTxs() {
-  const key = "liked-txs";
+  const key = "liked-txs-complex";
   const str = localStorage.getItem(key);
   const obj = str !== null ? JSON.parse(str) : [];
 
-  return obj as EtherscanTx[];
+  return obj as EtherscanTxWithParsedMessage[];
 }
 
-export function storeLikedTxs(array: EtherscanTx[]) {
-  const key = "liked-txs";
+export function storeLikedTxs(array: EtherscanTxWithParsedMessage[]) {
+  const key = "liked-txs-complex";
   const str = JSON.stringify(array);
   localStorage.setItem(key, str);
 }

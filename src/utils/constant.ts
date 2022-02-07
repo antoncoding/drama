@@ -4,10 +4,10 @@ export const spammers = [
 ];
 
 export const featuring: { account: string; tag?: string }[] = [
+  {
+    account: "0x981c8ecd009e3e84ee1ff99266bf1461a12e5c68",
+    tag: "JuiceBox (AssangeDAO)",
+  },
   { account: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
   { account: "0x099f8498348792abe502ec12f6163254dbbe321e" },
-  {
-    account: "0x629e7da20197a5429d30da36e77d06cdf796b71a",
-    tag: "Wormhole exploiter",
-  },
 ];

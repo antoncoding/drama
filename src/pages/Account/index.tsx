@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { LoadingRing, useTheme, Button } from "@aragon/ui";
+import { LoadingRing, useTheme, Button, Tag } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 import { getENS, getEthBalance, getMessages } from "../../utils/web3";
 
 import { MessageCard } from "../../components/MessageCard";
-import { EtherscanTx } from "../../types";
+import { EtherscanTxWithParsedMessage } from "../../types";
 import { Avatar } from "../../components/Avatar";
+import { parser } from "../../adapters";
 
 enum DisplayMode {
   All,
@@ -25,17 +26,40 @@ export function Account(props: any) {
 
   const [mode, setMode] = useState<DisplayMode>(DisplayMode.All);
 
-  const rawMessages = useAsyncMemo(
-    async () => {
-      if (!address) return [];
+  const [rawMessages, setRawMessages] = useState<
+    EtherscanTxWithParsedMessage[]
+  >([]);
+
+  const [page, setPage] = useState(0);
+
+  const perPage = 20;
+
+  const adapter = useMemo(() => parser.getAdapterByAddress(address), [address]);
+
+  useEffect(() => {
+    async function fetchMessages() {
       setLoading(true);
-      const messages = await getMessages(address, true);
-      setLoading(false);
-      return messages;
-    },
-    [address],
-    []
-  );
+      let firstBlock = 0;
+      if (adapter) {
+        firstBlock = adapter?.startBlock || 0;
+      }
+      return await getMessages(
+        address,
+        true,
+        firstBlock,
+        adapter !== undefined
+      );
+    }
+    setLoading(true);
+    fetchMessages()
+      .then((messages) => {
+        setRawMessages(messages);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [adapter, address]);
 
   const messagesToShow = useMemo(() => {
     return rawMessages.filter((tx) => {
@@ -78,9 +102,13 @@ export function Account(props: any) {
     return [sent, received];
   }, [address, rawMessages]);
 
-  const messageCards = messagesToShow.map((tx: EtherscanTx) => (
-    <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
-  ));
+  const messageCards = useMemo(() => {
+    return messagesToShow
+      .map((tx: EtherscanTxWithParsedMessage) => (
+        <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
+      ))
+      .slice(page * perPage, (page + 1) * perPage);
+  }, [messagesToShow, address, page]);
 
   const isEmpty = useMemo(
     () => messageCards.filter((c) => c !== null).length === 0,
@@ -94,7 +122,7 @@ export function Account(props: any) {
   return (
     <div>
       <div style={{ display: "flex" }}>
-        <Avatar account={address} ensName={ensName} />
+        <Avatar account={address} />
         <div>
           {
             <div
@@ -108,7 +136,7 @@ export function Account(props: any) {
               }}
             >
               {" "}
-              {ensName || shortenAddress}{" "}
+              {ensName || shortenAddress} {adapter && `(${adapter.name})`}
             </div>
           }
           {
@@ -144,8 +172,13 @@ export function Account(props: any) {
           }
         </div>
 
-        {/* This div is for putting the bottom group at the bottom-right */}
         <div style={{ flexGrow: 100, display: "flex", position: "relative" }}>
+          {/* This div is for putting the bottom group at the top-right */}
+          <div style={{ position: "absolute", top: 0, right: 0 }}>
+            {adapter && <Tag> Contract </Tag>}
+          </div>
+
+          {/* This div is for putting the bottom group at the bottom-right */}
           <div style={{ position: "absolute", bottom: 0, right: 0 }}>
             <Button
               size="mini"
@@ -188,7 +221,35 @@ export function Account(props: any) {
           !isLoading &&
           mode === DisplayMode.Sent &&
           `No on-chain message sent from this account.`}
-        {isLoading ? <LoadingRing /> : messageCards}
+        {isLoading ? (
+          <LoadingRing />
+        ) : (
+          <div>
+            {messageCards}
+
+            {!isEmpty && (
+              <div
+                style={{
+                  paddingTop: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {page > 0 && (
+                  <Button size="small" onClick={() => setPage((p) => p - 1)}>
+                    Prev
+                  </Button>
+                )}
+                {page + 1 * perPage < messagesToShow.length && (
+                  <Button size="small" onClick={() => setPage((p) => p + 1)}>
+                    Next
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,3 +18,13 @@ export type EtherscanTx = {
   txreceipt_status: string;
   value: string;
 };
+
+export type EtherscanTxWithParsedMessage = EtherscanTx & {
+  parsedMessage: string;
+  // if the message is parsed by adapter
+  isAdapterTx: boolean;
+  adapterRecipientIsAddress: boolean;
+  adapterName?: string;
+  adapterRecipient?: string;
+  adapterRecipientLink?: string;
+};

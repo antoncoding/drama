@@ -7,15 +7,17 @@ import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 
 export function Avatar({
   account,
-  ensName,
   size = 80,
   showAddress = false,
+  isSpecialEntity = false,
+  entityLink = undefined,
 }: {
   account: string;
-  ensName?: string | null;
   scale?: number;
   size?: number;
   showAddress?: boolean;
+  isSpecialEntity?: boolean;
+  entityLink?: string;
 }) {
   const theme = useTheme();
   const history = useHistory();
@@ -36,7 +38,26 @@ export function Avatar({
     history.push(`/account/${account}`);
   }, [account, history]);
 
-  return (
+  return isSpecialEntity ? (
+    // special button take you to the link
+    <LinkBase
+      onClick={() => window.open(entityLink, "_blank", "noopener,noreferrer")}
+      style={{
+        padding: 5,
+        // all child vertical aligned
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          color: theme.surfaceContentSecondary,
+        }}
+      >
+        {account}
+      </div>
+    </LinkBase>
+  ) : (
     <LinkBase
       style={{
         padding: 5,

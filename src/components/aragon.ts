@@ -1,8 +1,6 @@
 import styled from "styled-components";
 import { textStyle } from "@aragon/ui";
 
-console.log(`textStyle("body2")`, textStyle("body2"));
-
 export const Title1 = styled.div`
   ${textStyle("title1")}
 `;

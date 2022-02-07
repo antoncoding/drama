@@ -1,10 +1,11 @@
 import Web3 from "web3";
-import { EtherscanTx } from "../types";
+import { EtherscanTx, EtherscanTxWithParsedMessage } from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 import { ethers, providers } from "ethers";
 
 import { storeContractMap, getStoredContractMap } from "./storage";
 import { spammers } from "./constant";
+import { adapterAddresses, parser } from "../adapters";
 
 export const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
@@ -32,16 +33,105 @@ export function validate_txhash(hash: string) {
  * get all tx that are utf-8 messages
  * @param account
  */
-export async function getMessages(account: string, hideSpam: boolean) {
-  const txs = (await getTransactions(account))
-    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
-    .filter((tx) => input_to_ascii(tx.input) !== "");
+export async function getMessages(
+  account: string,
+  hideSpam: boolean,
+  startBlock: number,
+  isContract = false
+) {
+  // is input is a contract address, external  calls will only return transaction sent from other people.
+  if (isContract)
+    return getParsedMessagesForContract(account, startBlock, hideSpam);
+  else return getParsedMessagesForUser(account, hideSpam);
+}
 
-  const toAddresses = txs.map((t) => t.to);
+async function getParsedMessagesForUser(
+  account: string,
+  hideSpam: boolean
+): Promise<EtherscanTxWithParsedMessage[]> {
+  const txs = (await getTransactions(account, 0, true))
+    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
+    .filter(
+      (tx) =>
+        adapterAddresses.includes(tx.to) || input_to_ascii(tx.input) !== ""
+    );
+
+  const toAddresses = txs
+    .map((t) => t.to)
+    // exclude adapter address from the contract list, cause we will parse them separately
+    .filter((t) => !adapterAddresses.includes(t.toLowerCase()));
 
   const contractMap = await getNewContractMap(toAddresses);
 
-  return txs.filter((tx) => contractMap[tx.to] === false);
+  return txs
+    .filter((tx) => {
+      // this is one of the tx adapters can parse!
+      if (adapterAddresses.includes(tx.to)) {
+        return true;
+      }
+      return contractMap[tx.to] === false;
+    })
+    .map((tx) => {
+      const adapter = parser.getAdapterByAddress(tx.to);
+      // it's a parsable tx to a contract
+      if (adapter) {
+        const { recipient, recipientIsAddress, recipientLink, message } =
+          adapter.parseTxInput(tx.input);
+        return {
+          ...tx,
+          isAdapterTx: true,
+          adapterName: adapter.name,
+          adapterRecipient: recipient,
+          adapterRecipientIsAddress: recipientIsAddress,
+          adapterRecipientLink: recipientLink,
+          parsedMessage: message,
+        };
+      } else {
+        // it's a normal tx
+        const message = input_to_ascii(tx.input);
+        return {
+          ...tx,
+          isAdapterTx: false,
+          adapterRecipientIsAddress: false,
+          parsedMessage: message,
+        };
+      }
+    })
+    .filter((tx) => tx.parsedMessage !== "")
+    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+}
+
+async function getParsedMessagesForContract(
+  contractAddress: string,
+  startBlock: number,
+  hideSpam: boolean
+): Promise<EtherscanTxWithParsedMessage[]> {
+  const adapter = parser.getAdapterByAddress(contractAddress);
+  if (!adapter) return [];
+
+  const txs = (await getTransactions(contractAddress, startBlock, false))
+    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
+    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+
+  const txWithParsedMessage = txs
+    .map((tx) => {
+      const { recipient, recipientIsAddress, recipientLink, message } =
+        adapter.parseTxInput(tx.input);
+      return {
+        ...tx,
+        isAdapterTx: true,
+        adapterName: adapter.name,
+        adapterRecipient: recipient,
+        adapterRecipientIsAddress: recipientIsAddress,
+        adapterRecipientLink: recipientLink,
+        parsedMessage: message,
+      };
+    })
+    .filter((tx) => {
+      return tx.parsedMessage !== "";
+    });
+
+  return txWithParsedMessage;
 }
 
 /**
@@ -86,7 +176,11 @@ async function getNewContractMap(toAddresses: string[]) {
  * @param account
  * @returns
  */
-export async function getTransactions(account: string) {
+export async function getTransactions(
+  account: string,
+  earliestBlock = 2000000,
+  greedy = true
+) {
   let txs: EtherscanTx[] = [];
 
   const endpoint =
@@ -95,6 +189,7 @@ export async function getTransactions(account: string) {
   const res = await fetch(endpoint);
 
   txs = (await res.json()).result as EtherscanTx[];
+
   if (txs.length === 10000) {
     // need to recursive search to get full history
     txs = [];
@@ -102,8 +197,8 @@ export async function getTransactions(account: string) {
     const currentBlock = await web3.eth.getBlockNumber();
     let endBlock = currentBlock;
 
-    // assume there won't be more than 10_000 tx in 500_000 block
-    const batch = 1000_000;
+    // in greedy search: we assume there won't be more than 10_000 tx in 50_000 block
+    const batch = greedy ? 100_000 : 10_000;
 
     let startBlock = endBlock - batch;
     let searching = true;
@@ -115,21 +210,26 @@ export async function getTransactions(account: string) {
     &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
 
       const res = await fetch(pagedEndpoint);
-      const pageTxs = (await res.json()).result as EtherscanTx[];
+      const result = (await res.json()).result as EtherscanTx[];
+
+      const pageTxs = Array.isArray(result)
+        ? result.sort((a, b) =>
+            parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1
+          )
+        : [];
 
       endBlock = startBlock - 1;
       startBlock = endBlock - batch;
 
       txs = txs.concat(pageTxs);
 
-      if (startBlock < 0) searching = false;
+      if (startBlock < earliestBlock) searching = false;
     }
   }
 
   const filtered = txs
     .filter((tx) => tx.contractAddress === "") // it's not a contract creation tx
-    .filter((tx) => parseInt(tx.gasUsed) > 21000)
-    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+    .filter((tx) => parseInt(tx.gasUsed) > 21000);
 
   return filtered;
 }
