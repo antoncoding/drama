@@ -31,7 +31,6 @@ export function Home(props: any) {
     >
       <div
         style={{
-          minWidth: 600,
           maxWidth: 650,
           padding: 20,
         }}
