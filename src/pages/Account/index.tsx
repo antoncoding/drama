@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { LoadingRing, useTheme, Button } from "@aragon/ui";
+import { LoadingRing, useTheme, Button, Tag } from "@aragon/ui";
 import { useParams } from "react-router-dom";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 import { getENS, getEthBalance, getMessages } from "../../utils/web3";
 
 import { MessageCard } from "../../components/MessageCard";
-import { EtherscanTx } from "../../types";
+import { EtherscanTxWithParsedMessage } from "../../types";
 import { Avatar } from "../../components/Avatar";
 import { parser } from "../../adapters";
 
@@ -26,21 +26,29 @@ export function Account(props: any) {
 
   const [mode, setMode] = useState<DisplayMode>(DisplayMode.All);
 
-  const [rawMessages, setRawMessages] = useState<EtherscanTx[]>([]);
+  const [rawMessages, setRawMessages] = useState<
+    EtherscanTxWithParsedMessage[]
+  >([]);
 
-  const [expand, setExpand] = useState(1);
+  const [page, setPage] = useState(0);
 
-  const isAdaptor = useMemo(() => parser.isAdaptorAddress(address), [address]);
+  const perPage = 20;
+
+  const adapter = useMemo(() => parser.getAdapterByAddress(address), [address]);
 
   useEffect(() => {
     async function fetchMessages() {
       setLoading(true);
       let firstBlock = 0;
-      if (isAdaptor) {
-        const adaptor = parser.getAdapterByAddress(address);
-        firstBlock = adaptor?.startBlock || 0;
+      if (adapter) {
+        firstBlock = adapter?.startBlock || 0;
       }
-      return await getMessages(address, true, firstBlock, isAdaptor);
+      return await getMessages(
+        address,
+        true,
+        firstBlock,
+        adapter !== undefined
+      );
     }
     setLoading(true);
     fetchMessages()
@@ -51,7 +59,7 @@ export function Account(props: any) {
       .catch(() => {
         setLoading(false);
       });
-  }, [isAdaptor, address]);
+  }, [adapter, address]);
 
   const messagesToShow = useMemo(() => {
     return rawMessages.filter((tx) => {
@@ -96,12 +104,11 @@ export function Account(props: any) {
 
   const messageCards = useMemo(() => {
     return messagesToShow
-      .map((tx: EtherscanTx) => (
+      .map((tx: EtherscanTxWithParsedMessage) => (
         <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
       ))
-      .filter((card) => card != null)
-      .slice(0, 120 * expand);
-  }, [messagesToShow, address, expand]);
+      .slice(page * perPage, (page + 1) * perPage);
+  }, [messagesToShow, address, page]);
 
   const isEmpty = useMemo(
     () => messageCards.filter((c) => c !== null).length === 0,
@@ -129,7 +136,7 @@ export function Account(props: any) {
               }}
             >
               {" "}
-              {ensName || shortenAddress}{" "}
+              {ensName || shortenAddress} {adapter && `(${adapter.name})`}
             </div>
           }
           {
@@ -165,8 +172,13 @@ export function Account(props: any) {
           }
         </div>
 
-        {/* This div is for putting the bottom group at the bottom-right */}
         <div style={{ flexGrow: 100, display: "flex", position: "relative" }}>
+          {/* This div is for putting the bottom group at the top-right */}
+          <div style={{ position: "absolute", top: 0, right: 0 }}>
+            {adapter && <Tag> Contract </Tag>}
+          </div>
+
+          {/* This div is for putting the bottom group at the bottom-right */}
           <div style={{ position: "absolute", bottom: 0, right: 0 }}>
             <Button
               size="mini"
@@ -224,7 +236,16 @@ export function Account(props: any) {
                   justifyContent: "center",
                 }}
               >
-                <Button onClick={() => setExpand(expand + 1)}>Show More</Button>
+                {page > 0 && (
+                  <Button size="small" onClick={() => setPage((p) => p - 1)}>
+                    Prev
+                  </Button>
+                )}
+                {page + 1 * perPage < messagesToShow.length && (
+                  <Button size="small" onClick={() => setPage((p) => p + 1)}>
+                    Next
+                  </Button>
+                )}
               </div>
             )}
           </div>

@@ -5,7 +5,7 @@ import { SearchInput } from "../../components/SearchInput";
 import { getLikedTxs } from "../../utils/storage";
 import { MessageCard } from "../../components/MessageCard";
 import { AccountCard } from "../../components/AccountCard";
-import { EtherscanTx } from "../../types";
+import { EtherscanTxWithParsedMessage } from "../../types";
 
 // todo: move into the function and make it dynamic
 import { featuring } from "../../utils/constant";
@@ -15,7 +15,7 @@ export function Home(props: any) {
 
   const txs = getLikedTxs();
 
-  const liked = txs.map((tx: EtherscanTx) => (
+  const liked = txs.map((tx: EtherscanTxWithParsedMessage) => (
     <MessageCard tx={tx} key={tx.hash} showMedia={false} />
   ));
 
@@ -58,14 +58,6 @@ export function Home(props: any) {
             <Title3> Liked </Title3>
             {liked}
           </div>
-        )}
-        {/* have nothing to show on home page */}
-        {liked.length === 0 && (
-          <img
-            alt="cute"
-            src={require("../../imgs/home.jpg")}
-            style={{ width: 600, opacity: 0.75, borderRadius: 4 }}
-          />
         )}
       </div>
     </div>

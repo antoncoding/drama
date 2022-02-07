@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { EtherscanTx } from "../../types";
+import { EtherscanTxWithParsedMessage } from "../../types";
 import {
   Box,
   TransactionBadge,
@@ -16,54 +16,22 @@ import { TwitterTweetEmbed } from "react-twitter-embed";
 import { parseTwitterStatusId } from "../../utils/media";
 import { getLikedTxs, storeLikedTxs } from "../../utils/storage";
 
-import { parser } from "../../adapters";
-import { input_to_ascii } from "../../utils/web3";
-
 export function MessageCard({
   tx,
   account,
   showMedia,
 }: {
-  tx: EtherscanTx;
+  tx: EtherscanTxWithParsedMessage;
   account?: string;
   showMedia?: boolean;
 }) {
   const [liked, setLiked] = useState(false);
 
-  const [message, setMessage] = useState(input_to_ascii(tx.input));
-
-  const [recipient, setRecipient] = useState(tx.to);
-  const [adapterName, setAdapterName] = useState<undefined | string>(undefined);
-  const [recipientIsSpecialEntity, setRecipientIsSpecialEntity] =
-    useState(false);
-  const [recipientLink, setRecipientLink] = useState<undefined | string>(
-    undefined
-  );
-
-  useEffect(() => {
-    try {
-      // try parsing with adapter
-      const adapter = parser.getAdapter(tx);
-      if (adapter) {
-        const {
-          message,
-          recipient,
-          recipientIsAddress,
-          recipientLink: link,
-        } = adapter?.parseTxInput(tx.input);
-        setMessage(message);
-        setRecipient(recipient);
-        setAdapterName(adapter.name);
-        if (!recipientIsAddress) setRecipientIsSpecialEntity(true);
-        if (link) setRecipientLink(link);
-      }
-    } catch (error) {
-      setMessage("");
-      setAdapterName(undefined);
-    }
-
-    return () => {};
+  const recipient = useMemo(() => {
+    return tx.adapterRecipient || tx.to;
   }, [tx]);
+
+  const adapterName = useMemo(() => tx.adapterName, [tx.adapterName]);
 
   const toast = useToast();
 
@@ -74,8 +42,8 @@ export function MessageCard({
   const theme = useTheme();
 
   const twitterStatusId = useMemo(() => {
-    return parseTwitterStatusId(message);
-  }, [message]);
+    return parseTwitterStatusId(tx.parsedMessage);
+  }, [tx.parsedMessage]);
 
   useEffect(() => {
     const txs = getLikedTxs();
@@ -101,7 +69,7 @@ export function MessageCard({
     }
   }, [tx, toast]);
 
-  return message.length === 0 ? null : (
+  return tx.parsedMessage.length === 0 ? null : (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
         <div style={{ display: "flex" }}>
@@ -123,8 +91,8 @@ export function MessageCard({
             scale={1}
             size={30}
             showAddress={true}
-            isSpecialEntity={recipientIsSpecialEntity}
-            entityLink={recipientLink}
+            isSpecialEntity={!tx.adapterRecipientIsAddress}
+            entityLink={tx.adapterRecipientLink}
           />
           {adapterName && (
             <div style={{ marginTop: "auto", marginBottom: "auto" }}>
@@ -179,7 +147,7 @@ export function MessageCard({
           whiteSpace: "pre-line",
         }}
       >
-        {message}
+        {tx.parsedMessage}
 
         {/* show tweet embed */}
         <div>

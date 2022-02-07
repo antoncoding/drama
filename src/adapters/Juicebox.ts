@@ -11,16 +11,29 @@ export class JuiceBuxAdapter implements ContractAdapter {
   startBlock = 13979856;
 
   parseTxInput = (txInput: string) => {
+    const functionHash = utils.hexDataSlice(txInput, 0, 4);
+    if (functionHash !== "0x02c8986f")
+      return {
+        recipient: undefined,
+        message: "",
+        recipientIsAddress: false,
+        recipientLink: undefined,
+      };
     const [projectId, , memo] = utils.defaultAbiCoder.decode(
       ["uint256", "address", "string", "bool"], // project id, beneficiary, memo, preferUnstakedTickets
       utils.hexDataSlice(txInput, 4)
     );
 
+    console.log(`project`, projectId);
+    console.log(`project`, memo);
+
     return {
-      recipient: nameMap[projectId] || `Project ${projectId}`,
+      recipient:
+        nameMap[projectId.toString()] || `Project ${projectId.toString()}`,
       message: memo,
       recipientIsAddress: false,
-      recipientLink: linkMap[projectId] || "https://juicebox.money/#/projects",
+      recipientLink:
+        linkMap[projectId.toString()] || "https://juicebox.money/#/projects",
     };
   };
 }

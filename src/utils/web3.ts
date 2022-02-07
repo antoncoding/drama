@@ -1,11 +1,11 @@
 import Web3 from "web3";
-import { EtherscanTx } from "../types";
+import { EtherscanTx, EtherscanTxWithParsedMessage } from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 import { ethers, providers } from "ethers";
 
 import { storeContractMap, getStoredContractMap } from "./storage";
 import { spammers } from "./constant";
-import { adapterAddresses } from "../adapters";
+import { adapterAddresses, parser } from "../adapters";
 
 export const web3 = new Web3(
   `https://mainnet.infura.io/v3/${process.env.REACT_APP_INFURA_KEY}`
@@ -40,39 +40,98 @@ export async function getMessages(
   isContract = false
 ) {
   // is input is a contract address, external  calls will only return transaction sent from other people.
-  if (isContract) {
-    return (await getTransactions(account, startBlock, false))
-      .filter(
-        (tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase())
-      )
-      .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
-  } else {
-    const txs = (await getTransactions(account, startBlock, true))
-      .filter(
-        (tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase())
-      )
-      .filter(
-        (tx) =>
-          adapterAddresses.includes(tx.to) || input_to_ascii(tx.input) !== ""
-      );
+  if (isContract)
+    return getParsedMessagesForContract(account, startBlock, hideSpam);
+  else return getParsedMessagesForUser(account, hideSpam);
+}
 
-    const toAddresses = txs
-      .map((t) => t.to)
-      // exclude adapter address from the contract list, cause we will parse them separately
-      .filter((t) => !adapterAddresses.includes(t.toLowerCase()));
+async function getParsedMessagesForUser(
+  account: string,
+  hideSpam: boolean
+): Promise<EtherscanTxWithParsedMessage[]> {
+  const txs = (await getTransactions(account, 0, true))
+    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
+    .filter(
+      (tx) =>
+        adapterAddresses.includes(tx.to) || input_to_ascii(tx.input) !== ""
+    );
 
-    const contractMap = await getNewContractMap(toAddresses);
+  const toAddresses = txs
+    .map((t) => t.to)
+    // exclude adapter address from the contract list, cause we will parse them separately
+    .filter((t) => !adapterAddresses.includes(t.toLowerCase()));
 
-    return txs
-      .filter((tx) => {
-        // this is one of the tx adapters can parse!
-        if (adapterAddresses.includes(tx.to)) {
-          return true;
-        }
-        return contractMap[tx.to] === false;
-      })
-      .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
-  }
+  const contractMap = await getNewContractMap(toAddresses);
+
+  return txs
+    .filter((tx) => {
+      // this is one of the tx adapters can parse!
+      if (adapterAddresses.includes(tx.to)) {
+        return true;
+      }
+      return contractMap[tx.to] === false;
+    })
+    .map((tx) => {
+      const adapter = parser.getAdapterByAddress(tx.to);
+      // it's a parsable tx to a contract
+      if (adapter) {
+        const { recipient, recipientIsAddress, recipientLink, message } =
+          adapter.parseTxInput(tx.input);
+        return {
+          ...tx,
+          isAdapterTx: true,
+          adapterName: adapter.name,
+          adapterRecipient: recipient,
+          adapterRecipientIsAddress: recipientIsAddress,
+          adapterRecipientLink: recipientLink,
+          parsedMessage: message,
+        };
+      } else {
+        // it's a normal tx
+        const message = input_to_ascii(tx.input);
+        return {
+          ...tx,
+          isAdapterTx: false,
+          adapterRecipientIsAddress: false,
+          parsedMessage: message,
+        };
+      }
+    })
+    .filter((tx) => tx.parsedMessage !== "")
+    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+}
+
+async function getParsedMessagesForContract(
+  contractAddress: string,
+  startBlock: number,
+  hideSpam: boolean
+): Promise<EtherscanTxWithParsedMessage[]> {
+  const adapter = parser.getAdapterByAddress(contractAddress);
+  if (!adapter) return [];
+
+  const txs = (await getTransactions(contractAddress, startBlock, false))
+    .filter((tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase()))
+    .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+
+  const txWithParsedMessage = txs
+    .map((tx) => {
+      const { recipient, recipientIsAddress, recipientLink, message } =
+        adapter.parseTxInput(tx.input);
+      return {
+        ...tx,
+        isAdapterTx: true,
+        adapterName: adapter.name,
+        adapterRecipient: recipient,
+        adapterRecipientIsAddress: recipientIsAddress,
+        adapterRecipientLink: recipientLink,
+        parsedMessage: message,
+      };
+    })
+    .filter((tx) => {
+      return tx.parsedMessage !== "";
+    });
+
+  return txWithParsedMessage;
 }
 
 /**
