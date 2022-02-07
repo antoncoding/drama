@@ -34,8 +34,7 @@ class ContractParser {
     for (const adapter of adapters) {
       try {
         return adapter.parseTxInput(input);
-      } catch (error) {
-        console.log(`parsing error`, error);
+      } catch {
         return { recipient: undefined, message: undefined };
       }
     }

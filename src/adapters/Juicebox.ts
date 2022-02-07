@@ -24,9 +24,6 @@ export class JuiceBuxAdapter implements ContractAdapter {
       utils.hexDataSlice(txInput, 4)
     );
 
-    console.log(`project`, projectId);
-    console.log(`project`, memo);
-
     return {
       recipient:
         nameMap[projectId.toString()] || `Project ${projectId.toString()}`,
