@@ -16,7 +16,7 @@ export function Home(props: any) {
   const txs = getLikedTxs();
 
   const liked = txs.map((tx: EtherscanTxWithParsedMessage) => (
-    <MessageCard tx={tx} key={tx.hash} showMedia={false} />
+    <MessageCard tx={tx} key={tx.hash} showMedia={false} compact={true} />
   ));
 
   return (

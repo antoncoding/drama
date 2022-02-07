@@ -34,6 +34,8 @@ export function Avatar({
     return account.slice(0, 4).concat("...").concat(account.slice(-4));
   }, [account]);
 
+  console.log(`shortenAddress`, shortenAddress);
+
   const goToAccount = useCallback(() => {
     history.push(`/account/${account}`);
   }, [account, history]);

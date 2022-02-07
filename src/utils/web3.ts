@@ -92,7 +92,7 @@ async function getParsedMessagesForUser(
         return {
           ...tx,
           isAdapterTx: false,
-          adapterRecipientIsAddress: false,
+          adapterRecipientIsAddress: true,
           parsedMessage: message,
         };
       }

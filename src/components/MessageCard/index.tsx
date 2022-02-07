@@ -20,10 +20,12 @@ export function MessageCard({
   tx,
   account,
   showMedia,
+  compact,
 }: {
   tx: EtherscanTxWithParsedMessage;
   account?: string;
   showMedia?: boolean;
+  compact?: boolean;
 }) {
   const [liked, setLiked] = useState(false);
 
@@ -84,13 +86,18 @@ export function MessageCard({
             {account && `[  ${isIncoming ? "In" : "Out"} ]`}
           </div>
           <div style={{ marginTop: "auto", marginBottom: "auto" }}> From </div>
-          <Avatar account={tx.from} scale={1} size={30} showAddress={true} />
+          <Avatar
+            account={tx.from}
+            scale={1}
+            size={30}
+            showAddress={!compact}
+          />
           <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
           <Avatar
             account={recipient}
             scale={1}
             size={30}
-            showAddress={true}
+            showAddress={!compact}
             isSpecialEntity={!tx.adapterRecipientIsAddress}
             entityLink={tx.adapterRecipientLink}
           />
