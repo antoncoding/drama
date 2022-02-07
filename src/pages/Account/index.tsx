@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { LoadingRing, useTheme, Button } from "@aragon/ui";
 import { useParams } from "react-router-dom";
@@ -9,6 +9,7 @@ import { getENS, getEthBalance, getMessages } from "../../utils/web3";
 import { MessageCard } from "../../components/MessageCard";
 import { EtherscanTx } from "../../types";
 import { Avatar } from "../../components/Avatar";
+import { parser } from "../../adapters";
 
 enum DisplayMode {
   All,
@@ -25,17 +26,30 @@ export function Account(props: any) {
 
   const [mode, setMode] = useState<DisplayMode>(DisplayMode.All);
 
-  const rawMessages = useAsyncMemo(
-    async () => {
-      if (!address) return [];
+  const [rawMessages, setRawMessages] = useState<EtherscanTx[]>([]);
+
+  const isAdaptor = useMemo(() => parser.isAdaptorAddress(address), [address]);
+
+  useEffect(() => {
+    async function fetchMessages() {
       setLoading(true);
-      const messages = await getMessages(address, true);
-      setLoading(false);
-      return messages;
-    },
-    [address],
-    []
-  );
+      let firstBlock = 0;
+      if (isAdaptor) {
+        const adaptor = parser.getAdapterByAddress(address);
+        firstBlock = adaptor?.startBlock || 0;
+      }
+      return await getMessages(address, true, firstBlock, isAdaptor);
+    }
+    setLoading(true);
+    fetchMessages()
+      .then((messages) => {
+        setRawMessages(messages);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [isAdaptor, address]);
 
   const messagesToShow = useMemo(() => {
     return rawMessages.filter((tx) => {
@@ -78,9 +92,14 @@ export function Account(props: any) {
     return [sent, received];
   }, [address, rawMessages]);
 
-  const messageCards = messagesToShow.map((tx: EtherscanTx) => (
-    <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
-  ));
+  const messageCards = useMemo(() => {
+    return messagesToShow
+      .map((tx: EtherscanTx) => (
+        <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
+      ))
+      .filter((card) => card != null)
+      .slice(0, 20);
+  }, [messagesToShow, address]);
 
   const isEmpty = useMemo(
     () => messageCards.filter((c) => c !== null).length === 0,
@@ -94,7 +113,7 @@ export function Account(props: any) {
   return (
     <div>
       <div style={{ display: "flex" }}>
-        <Avatar account={address} ensName={ensName} />
+        <Avatar account={address} />
         <div>
           {
             <div

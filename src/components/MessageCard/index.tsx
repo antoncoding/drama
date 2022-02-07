@@ -10,12 +10,14 @@ import {
   useToast,
 } from "@aragon/ui";
 import { timeSince } from "../../utils/time";
-import { input_to_ascii } from "../../utils/web3";
 import { Body2 } from "../aragon";
 import { Avatar } from "../Avatar";
 import { TwitterTweetEmbed } from "react-twitter-embed";
 import { parseTwitterStatusId } from "../../utils/media";
 import { getLikedTxs, storeLikedTxs } from "../../utils/storage";
+
+import { parser } from "../../adapters";
+import { input_to_ascii } from "../../utils/web3";
 
 export function MessageCard({
   tx,
@@ -27,7 +29,41 @@ export function MessageCard({
   showMedia?: boolean;
 }) {
   const [liked, setLiked] = useState(false);
-  const msg = input_to_ascii(tx.input);
+
+  const [message, setMessage] = useState(input_to_ascii(tx.input));
+
+  const [recipient, setRecipient] = useState(tx.to);
+  const [adapterName, setAdapterName] = useState<undefined | string>(undefined);
+  const [recipientIsSpecialEntity, setRecipientIsSpecialEntity] =
+    useState(false);
+  const [recipientLink, setRecipientLink] = useState<undefined | string>(
+    undefined
+  );
+
+  useEffect(() => {
+    try {
+      // try parsing with adapter
+      const adapter = parser.getAdapter(tx);
+      if (adapter) {
+        const {
+          message,
+          recipient,
+          recipientIsAddress,
+          recipientLink: link,
+        } = adapter?.parseTxInput(tx.input);
+        setMessage(message);
+        setRecipient(recipient);
+        setAdapterName(adapter.name);
+        if (!recipientIsAddress) setRecipientIsSpecialEntity(true);
+        if (link) setRecipientLink(link);
+      }
+    } catch (error) {
+      setMessage("");
+      setAdapterName(undefined);
+    }
+
+    return () => {};
+  }, [tx]);
 
   const toast = useToast();
 
@@ -38,8 +74,8 @@ export function MessageCard({
   const theme = useTheme();
 
   const twitterStatusId = useMemo(() => {
-    return parseTwitterStatusId(msg);
-  }, [msg]);
+    return parseTwitterStatusId(message);
+  }, [message]);
 
   useEffect(() => {
     const txs = getLikedTxs();
@@ -65,7 +101,7 @@ export function MessageCard({
     }
   }, [tx, toast]);
 
-  return msg.length === 0 ? null : (
+  return message.length === 0 ? null : (
     <Box>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
         <div style={{ display: "flex" }}>
@@ -80,9 +116,27 @@ export function MessageCard({
             {account && `[  ${isIncoming ? "In" : "Out"} ]`}
           </div>
           <div style={{ marginTop: "auto", marginBottom: "auto" }}> From </div>
-          <Avatar account={tx.from} scale={1} size={30} />
+          <Avatar account={tx.from} scale={1} size={30} showAddress={true} />
           <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
-          <Avatar account={tx.to} scale={1} size={30} />
+          <Avatar
+            account={recipient}
+            scale={1}
+            size={30}
+            showAddress={true}
+            isSpecialEntity={recipientIsSpecialEntity}
+            entityLink={recipientLink}
+          />
+          {adapterName && (
+            <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+              through{" "}
+              {
+                <span style={{ color: theme.surfaceContentSecondary }}>
+                  {" "}
+                  {adapterName}{" "}
+                </span>
+              }
+            </div>
+          )}
           <div style={{ marginTop: "auto", marginBottom: "auto" }}>
             {" "}
             - {timeSince(parseInt(tx.timeStamp))}{" "}
@@ -125,7 +179,7 @@ export function MessageCard({
           whiteSpace: "pre-line",
         }}
       >
-        {msg}
+        {message}
 
         {/* show tweet embed */}
         <div>
