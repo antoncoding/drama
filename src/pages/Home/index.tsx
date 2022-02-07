@@ -32,6 +32,7 @@ export function Home(props: any) {
       <div
         style={{
           maxWidth: 650,
+          minWidth: "50%",
           padding: 20,
         }}
       >
