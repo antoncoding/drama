@@ -26,9 +26,11 @@ export class JuiceBuxAdapter implements ContractAdapter {
 }
 
 const nameMap = {
+  "89": "DAOTaiFung",
   "323": "AssangeDAO",
 };
 
 const linkMap = {
+  "89": "https://juicebox.money/#/p/daotaifung",
   "323": "https://juicebox.money/#/p/assangedao",
 };

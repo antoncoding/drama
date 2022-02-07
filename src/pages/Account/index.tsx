@@ -28,6 +28,8 @@ export function Account(props: any) {
 
   const [rawMessages, setRawMessages] = useState<EtherscanTx[]>([]);
 
+  const [expand, setExpand] = useState(1);
+
   const isAdaptor = useMemo(() => parser.isAdaptorAddress(address), [address]);
 
   useEffect(() => {
@@ -98,8 +100,8 @@ export function Account(props: any) {
         <MessageCard tx={tx} key={tx.hash} account={address} showMedia={true} />
       ))
       .filter((card) => card != null)
-      .slice(0, 20);
-  }, [messagesToShow, address]);
+      .slice(0, 120 * expand);
+  }, [messagesToShow, address, expand]);
 
   const isEmpty = useMemo(
     () => messageCards.filter((c) => c !== null).length === 0,
@@ -207,7 +209,26 @@ export function Account(props: any) {
           !isLoading &&
           mode === DisplayMode.Sent &&
           `No on-chain message sent from this account.`}
-        {isLoading ? <LoadingRing /> : messageCards}
+        {isLoading ? (
+          <LoadingRing />
+        ) : (
+          <div>
+            {messageCards}
+
+            {!isEmpty && (
+              <div
+                style={{
+                  paddingTop: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Button onClick={() => setExpand(expand + 1)}>Show More</Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

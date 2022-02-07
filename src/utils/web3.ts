@@ -41,9 +41,11 @@ export async function getMessages(
 ) {
   // is input is a contract address, external  calls will only return transaction sent from other people.
   if (isContract) {
-    return (await getTransactions(account, startBlock, false)).filter(
-      (tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase())
-    );
+    return (await getTransactions(account, startBlock, false))
+      .filter(
+        (tx) => hideSpam && !spammers.includes(tx.from.toLocaleLowerCase())
+      )
+      .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
   } else {
     const txs = (await getTransactions(account, startBlock, true))
       .filter(
@@ -61,13 +63,15 @@ export async function getMessages(
 
     const contractMap = await getNewContractMap(toAddresses);
 
-    return txs.filter((tx) => {
-      // this is one of the tx adapters can parse!
-      if (adapterAddresses.includes(tx.to)) {
-        return true;
-      }
-      return contractMap[tx.to] === false;
-    });
+    return txs
+      .filter((tx) => {
+        // this is one of the tx adapters can parse!
+        if (adapterAddresses.includes(tx.to)) {
+          return true;
+        }
+        return contractMap[tx.to] === false;
+      })
+      .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
   }
 }
 
