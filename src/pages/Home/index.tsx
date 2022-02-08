@@ -48,7 +48,13 @@ export function Home(props: any) {
           <div>
             <Title3> Featuring </Title3>
             {featuring.map((info) => {
-              return <AccountCard account={info.account} tag={info.tag} />;
+              return (
+                <AccountCard
+                  account={info.account}
+                  tag={info.tag}
+                  key={info.account}
+                />
+              );
             })}
           </div>
         }

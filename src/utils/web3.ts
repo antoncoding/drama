@@ -50,8 +50,8 @@ export async function getMessages(
 ) {
   // is input is a contract address, external  calls will only return transaction sent from other people.
   if (isContract)
-    return getParsedMessagesForContract(account, startBlock, hideSpam);
-  else return getParsedMessagesForUser(account, hideSpam);
+    return await getParsedMessagesForContract(account, startBlock, hideSpam);
+  return await getParsedMessagesForUser(account, hideSpam);
 }
 
 async function getParsedMessagesForUser(
