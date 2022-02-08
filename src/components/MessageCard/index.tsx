@@ -151,7 +151,9 @@ export function MessageCard({
       </div>
       <Body2
         style={{
+          maxWidth: "100%",
           whiteSpace: "pre-line",
+          overflow: "hidden",
         }}
       >
         {tx.parsedMessage}
