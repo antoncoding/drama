@@ -1,20 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { EtherscanTxWithParsedMessage } from "../../types";
+import { useHistory } from "react-router-dom";
+import { TwitterTweetEmbed } from "react-twitter-embed";
 import {
   Box,
   TransactionBadge,
-  ButtonBase,
+  LinkBase,
   useTheme,
   IconStar,
   IconStarFilled,
   useToast,
 } from "@aragon/ui";
+
+import { EtherscanTxWithParsedMessage } from "../../types";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
 import { Avatar } from "../Avatar";
-import { TwitterTweetEmbed } from "react-twitter-embed";
 import { parseTwitterStatusId } from "../../utils/media";
 import { getLikedTxs, storeLikedTxs } from "../../utils/storage";
+import { VerticalAlignWrapper } from "../Wrapper/VerticalAlignWrapper";
 
 export function MessageCard({
   tx,
@@ -27,6 +30,8 @@ export function MessageCard({
   showMedia?: boolean;
   compact?: boolean;
 }) {
+  const history = useHistory();
+
   const [liked, setLiked] = useState(false);
 
   const recipient = useMemo(() => {
@@ -53,6 +58,10 @@ export function MessageCard({
     setLiked(isLiked);
   }, [tx.hash]);
 
+  const clickOnCard = useCallback(() => {
+    history.push(`/tx/${tx.hash}`);
+  }, [history, tx.hash]);
+
   const clickLike = useCallback(() => {
     const txs = getLikedTxs();
     const isLiked = txs.map((tx) => tx.hash).includes(tx.hash);
@@ -72,99 +81,108 @@ export function MessageCard({
   }, [tx, toast]);
 
   return tx.parsedMessage.length === 0 ? null : (
-    <Box>
-      <div style={{ paddingBottom: "1%", position: "relative" }}>
-        <div style={{ display: "flex" }}>
+    <Box padding={10}>
+      <LinkBase onClick={clickOnCard} style={{ width: "100%" }}>
+        <div style={{ paddingBottom: "1%", position: "relative" }}>
+          <div style={{ display: "flex" }}>
+            <div
+              style={{
+                marginTop: "auto",
+                marginBottom: "auto",
+                paddingRight: 5,
+                color: theme.surfaceContentSecondary,
+              }}
+            >
+              {account && `[  ${isIncoming ? "In" : "Out"} ]`}
+            </div>
+            <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+              {" "}
+              From{" "}
+            </div>
+            <Avatar
+              account={tx.from}
+              scale={1}
+              size={30}
+              showAddress={!compact}
+            />
+            <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
+            <Avatar
+              account={recipient}
+              scale={1}
+              size={30}
+              showAddress={!compact}
+              isSpecialEntity={!tx.adapterRecipientIsAddress}
+              entityLink={tx.adapterRecipientLink}
+            />
+            {!compact && adapterName && (
+              <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+                through{" "}
+                {
+                  <span style={{ color: theme.surfaceContentSecondary }}>
+                    {" "}
+                    {adapterName}{" "}
+                  </span>
+                }
+              </div>
+            )}
+            <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+              {" "}
+              - {timeSince(parseInt(tx.timeStamp))}{" "}
+            </div>
+          </div>
+
+          {/* buttons, fix at top right corner */}
           <div
             style={{
-              marginTop: "auto",
-              marginBottom: "auto",
-              paddingRight: 5,
-              color: theme.surfaceContentSecondary,
+              // position at top right
+              position: "absolute",
+              top: 0,
+              right: 0,
             }}
           >
-            {account && `[  ${isIncoming ? "In" : "Out"} ]`}
-          </div>
-          <div style={{ marginTop: "auto", marginBottom: "auto" }}> From </div>
-          <Avatar
-            account={tx.from}
-            scale={1}
-            size={30}
-            showAddress={!compact}
-          />
-          <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
-          <Avatar
-            account={recipient}
-            scale={1}
-            size={30}
-            showAddress={!compact}
-            isSpecialEntity={!tx.adapterRecipientIsAddress}
-            entityLink={tx.adapterRecipientLink}
-          />
-          {adapterName && (
-            <div style={{ marginTop: "auto", marginBottom: "auto" }}>
-              through{" "}
-              {
-                <span style={{ color: theme.surfaceContentSecondary }}>
-                  {" "}
-                  {adapterName}{" "}
-                </span>
-              }
-            </div>
-          )}
-          <div style={{ marginTop: "auto", marginBottom: "auto" }}>
-            {" "}
-            - {timeSince(parseInt(tx.timeStamp))}{" "}
+            <VerticalAlignWrapper>
+              {/* only show Like  or dislike when not in compact mode */}
+              {!compact && (
+                <LinkBase
+                  onClick={clickLike}
+                  style={{ display: "inline-block" }}
+                >
+                  {liked ? <IconStarFilled /> : <IconStar />}
+                </LinkBase>
+              )}
+
+              {/* Link To etherscan */}
+              <LinkBase
+                style={{ display: "inline-block" }}
+                onClick={() =>
+                  (window as any)
+                    .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
+                    .focus()
+                }
+              >
+                <TransactionBadge transaction={tx.hash} />
+              </LinkBase>
+            </VerticalAlignWrapper>
           </div>
         </div>
-
-        {/* buttons, fix at top right corner */}
-        <div
+        <Body2
           style={{
-            // all child vertical aligned
-            display: "flex",
-            alignItems: "center",
-
-            // position at top right
-            position: "absolute",
-            top: 0,
-            right: 0,
+            textAlign: "start",
+            width: "100%",
+            whiteSpace: "pre-line",
+            overflow: "hidden",
           }}
         >
-          {/* Like  or dislike a tx */}
-          <ButtonBase onClick={clickLike} style={{ display: "inline-block" }}>
-            {liked ? <IconStarFilled /> : <IconStar />}
-          </ButtonBase>
+          {tx.parsedMessage}
 
-          {/* Link To etherscan */}
-          <ButtonBase
-            style={{ display: "inline-block" }}
-            onClick={() =>
-              (window as any)
-                .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
-                .focus()
-            }
-          >
-            <TransactionBadge transaction={tx.hash} />
-          </ButtonBase>
-        </div>
-      </div>
-      <Body2
-        style={{
-          maxWidth: "100%",
-          whiteSpace: "pre-line",
-          overflow: "hidden",
-        }}
-      >
-        {tx.parsedMessage}
-
-        {/* show tweet embed */}
-        <div>
-          {showMedia && twitterStatusId && (
-            <TwitterTweetEmbed tweetId={twitterStatusId} />
-          )}
-        </div>
-      </Body2>
+          {/* show tweet embed */}
+          <div>
+            {showMedia && twitterStatusId && (
+              <TwitterTweetEmbed tweetId={twitterStatusId} />
+            )}
+          </div>
+        </Body2>
+      </LinkBase>
     </Box>
   );
 }

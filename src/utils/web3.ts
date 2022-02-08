@@ -38,6 +38,28 @@ export function validate_txhash(hash: string) {
   return /^0x([A-Fa-f0-9]{64})$/.test(hash);
 }
 
+export async function getParsedTx(hash: string) {
+  const endpointTx = `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=${hash}&apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`;
+
+  // get gasUsed from receipt
+  const endpointReceipt = `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionReceipt&txhash=${hash}&apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`;
+  const [result, receipt] = await Promise.all([
+    fetch(endpointTx),
+    fetch(endpointReceipt),
+  ]);
+
+  let tx = {
+    ...(await result.json()).result,
+    ...(await receipt.json()).result,
+  };
+  return tryParseTxInput(tx);
+}
+
+export async function getBlockTimestamp(blockNumber: string) {
+  const block = await web3.eth.getBlock(parseInt(blockNumber, 16));
+  return block.timestamp;
+}
+
 /**
  * get all tx that are utf-8 messages
  * @param account
@@ -80,34 +102,36 @@ async function getParsedMessagesForUser(
       }
       return contractMap[tx.to] === false;
     })
-    .map((tx) => {
-      const adapter = parser.getAdapterByAddress(tx.to);
-      // it's a parsable tx to a contract
-      if (adapter) {
-        const { recipient, recipientIsAddress, recipientLink, message } =
-          adapter.parseTxInput(tx.input);
-        return {
-          ...tx,
-          isAdapterTx: true,
-          adapterName: adapter.name,
-          adapterRecipient: recipient,
-          adapterRecipientIsAddress: recipientIsAddress,
-          adapterRecipientLink: recipientLink,
-          parsedMessage: message,
-        };
-      } else {
-        // it's a normal tx
-        const message = input_to_ascii(tx.input);
-        return {
-          ...tx,
-          isAdapterTx: false,
-          adapterRecipientIsAddress: true,
-          parsedMessage: message,
-        };
-      }
-    })
+    .map(tryParseTxInput)
     .filter((tx) => tx.parsedMessage !== "")
     .sort((a, b) => (parseInt(a.timeStamp) > parseInt(b.timeStamp) ? -1 : 1));
+}
+
+function tryParseTxInput(tx: EtherscanTxLite): EtherscanTxWithParsedMessage {
+  const adapter = parser.getAdapterByAddress(tx.to);
+  // it's a parsable tx to a contract
+  if (adapter) {
+    const { recipient, recipientIsAddress, recipientLink, message } =
+      adapter.parseTxInput(tx.input);
+    return {
+      ...tx,
+      isAdapterTx: true,
+      adapterName: adapter.name,
+      adapterRecipient: recipient,
+      adapterRecipientIsAddress: recipientIsAddress,
+      adapterRecipientLink: recipientLink,
+      parsedMessage: message,
+    };
+  } else {
+    // it's a normal tx
+    const message = input_to_ascii(tx.input);
+    return {
+      ...tx,
+      isAdapterTx: false,
+      adapterRecipientIsAddress: true,
+      parsedMessage: message,
+    };
+  }
 }
 
 async function getParsedMessagesForContract(
@@ -115,6 +139,7 @@ async function getParsedMessagesForContract(
   startBlock: number,
   hideSpam: boolean
 ): Promise<EtherscanTxWithParsedMessage[]> {
+  // get the adaptor first because it will be used by all the txs
   const adapter = parser.getAdapterByAddress(contractAddress);
   if (!adapter) return [];
 

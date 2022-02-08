@@ -39,3 +39,20 @@ export type EtherscanTxWithParsedMessage = EtherscanTxLite & {
   adapterRecipient?: string;
   adapterRecipientLink?: string;
 };
+
+export const defaultTxPlaceHolder = {
+  blockNumber: "",
+  from: "",
+  gasUsed: "",
+  hash: "",
+  input: "",
+  timeStamp: "",
+  to: "",
+  value: "",
+  parsedMessage: "",
+  isAdapterTx: false,
+  adapterRecipientIsAddress: false,
+  adapterName: "",
+  adapterRecipient: "",
+  adapterRecipientLink: "",
+};

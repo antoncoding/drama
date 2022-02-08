@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { Main, Bar, ToastHub, ButtonBase } from "@aragon/ui";
 import { Account } from "./pages/Account";
+import { Transaction } from "./pages/Transaction";
 import { Home } from "./pages/Home";
 import { Title3 } from "./components/aragon";
 import { SearchInput } from "./components/SearchInput";
@@ -41,6 +42,9 @@ function SubApp() {
         <Switch>
           <Route path="/account/:address">
             <Account />
+          </Route>
+          <Route path="/tx/:hash">
+            <Transaction />
           </Route>
           <Route path="/">
             <Home />
