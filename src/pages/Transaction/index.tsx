@@ -260,11 +260,9 @@ export function Transaction() {
           <br />
           <TwitterShareButton
             url={window.location.href}
-            title={`"${tx.parsedMessage}"  -- by ${tx.from.slice(
-              0,
-              6
-            )}.. on Ethereum.`}
-            // related={['antonttc']}
+            title={` A message to ${recipient.slice(0, 10)}: \n"${
+              tx.parsedMessage
+            }"  -- by ${tx.from.slice(0, 10)}.. on Ethereum.`}
           >
             <TwitterIcon size={30} round={true} />
           </TwitterShareButton>
