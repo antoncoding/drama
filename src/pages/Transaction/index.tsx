@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useParams } from "react-router-dom";
 import { defaultTxPlaceHolder } from "../../types";
 import {
@@ -6,10 +12,15 @@ import {
   TransactionBadge,
   ButtonBase,
   useTheme,
+  IconShare,
   IconStar,
   IconStarFilled,
   useToast,
+  Popover,
 } from "@aragon/ui";
+
+import { TwitterShareButton, TwitterIcon } from "react-share";
+
 // import { timeSince } from "../../utils/time";
 import { Body3, Title2, Title1 } from "../../components/aragon";
 import { BoxLoading } from "react-loadingg";
@@ -25,6 +36,9 @@ import { VerticalAlignWrapper } from "../../components/Wrapper/VerticalAlignWrap
 export function Transaction() {
   const [liked, setLiked] = useState(false);
 
+  const [showSharePopover, setShowShare] = useState(false);
+  const opener = useRef();
+
   const [isLoading, setIsLoading] = useState(true);
 
   const { hash } = useParams();
@@ -34,7 +48,6 @@ export function Transaction() {
       try {
         setIsLoading(true);
         let msg = await getParsedTx(hash);
-        console.log(`msg`, msg);
         const timestamp = (await getBlockTimestamp(msg.blockNumber)) as string;
         msg.timeStamp = timestamp;
         return msg;
@@ -202,8 +215,11 @@ export function Transaction() {
               right: 0,
             }}
           >
-            <ButtonBase onClick={clickLike} style={{ display: "inline-block" }}>
+            <ButtonBase onClick={clickLike} style={{ paddingRight: 5 }}>
               {liked ? <IconStarFilled /> : <IconStar />}
+            </ButtonBase>
+            <ButtonBase onClick={() => setShowShare(true)} ref={opener}>
+              {<IconShare />}
             </ButtonBase>
           </VerticalAlignWrapper>
         </div>
@@ -232,6 +248,28 @@ export function Transaction() {
           </Body3>
         </div>
       </Box>
+
+      {/* // share popup */}
+      <Popover
+        visible={showSharePopover}
+        opener={opener.current}
+        onClose={() => setShowShare(false)}
+      >
+        <Box>
+          <Body3> Share </Body3>
+          <br />
+          <TwitterShareButton
+            url={window.location.href}
+            title={`"${tx.parsedMessage}"  -- by ${tx.from.slice(
+              0,
+              6
+            )}.. on Ethereum.`}
+            // related={['antonttc']}
+          >
+            <TwitterIcon size={30} round={true} />
+          </TwitterShareButton>
+        </Box>
+      </Popover>
     </div>
   );
 }
