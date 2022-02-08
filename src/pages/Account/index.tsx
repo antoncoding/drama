@@ -36,6 +36,11 @@ export function Account(props: any) {
 
   const adapter = useMemo(() => parser.getAdapterByAddress(address), [address]);
 
+  // reset page when account is changed
+  useEffect(() => {
+    setPage(0);
+  }, [address]);
+
   useEffect(() => {
     async function fetchMessages() {
       setLoading(true);

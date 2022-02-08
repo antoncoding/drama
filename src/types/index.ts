@@ -19,7 +19,18 @@ export type EtherscanTx = {
   value: string;
 };
 
-export type EtherscanTxWithParsedMessage = EtherscanTx & {
+export type EtherscanTxLite = {
+  blockNumber: string;
+  from: string;
+  gasUsed: string;
+  hash: string;
+  input: string;
+  timeStamp: string;
+  to: string;
+  value: string;
+};
+
+export type EtherscanTxWithParsedMessage = EtherscanTxLite & {
   parsedMessage: string;
   // if the message is parsed by adapter
   isAdapterTx: boolean;
