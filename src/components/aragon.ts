@@ -13,6 +13,11 @@ export const Title3 = styled.div`
   ${textStyle("title3")}
 `;
 
+export const Body1 = styled.div`
+  ${textStyle("body1")},
+  word-break:break-all
+`;
+
 export const Body2 = styled.div`
   ${textStyle("body2")},
   word-break:break-all

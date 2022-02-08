@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { LoadingRing, useTheme, Button, Tag } from "@aragon/ui";
+import { useTheme, Button, Tag } from "@aragon/ui";
 import { useParams } from "react-router-dom";
+import { BoxLoading } from "react-loadingg";
 
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
 import { getENS, getEthBalance, getMessages } from "../../utils/web3";
@@ -67,14 +68,12 @@ export function Account(props: any) {
   }, [adapter, address]);
 
   const messagesToShow = useMemo(() => {
-    return rawMessages.filter((tx) => {
-      if (mode === DisplayMode.All) return true;
-      if (mode === DisplayMode.Sent)
-        return tx.from.toLowerCase() === address.toLowerCase();
-      if (mode === DisplayMode.Received)
-        return tx.to.toLowerCase() === address.toLowerCase();
-      return false;
-    });
+    if (mode === DisplayMode.All) return rawMessages;
+    if (mode === DisplayMode.Sent)
+      return rawMessages.filter((tx) => tx.from === address.toLowerCase());
+    else {
+      return rawMessages.filter((tx) => tx.to === address.toLowerCase());
+    }
   }, [rawMessages, mode, address]);
 
   const ensName = useAsyncMemo(
@@ -115,10 +114,7 @@ export function Account(props: any) {
       .slice(page * perPage, (page + 1) * perPage);
   }, [messagesToShow, address, page]);
 
-  const isEmpty = useMemo(
-    () => messageCards.filter((c) => c !== null).length === 0,
-    [messageCards]
-  );
+  const isEmpty = useMemo(() => rawMessages.length === 0, [rawMessages]);
 
   const shortenAddress = useMemo(() => {
     return address.slice(0, 4).concat("...").concat(address.slice(-4));
@@ -227,7 +223,7 @@ export function Account(props: any) {
           mode === DisplayMode.Sent &&
           `No on-chain message sent from this account.`}
         {isLoading ? (
-          <LoadingRing />
+          <BoxLoading />
         ) : (
           <div>
             {messageCards}

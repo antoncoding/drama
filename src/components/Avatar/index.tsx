@@ -4,6 +4,7 @@ import { etherProvider, getENS } from "../../utils/web3";
 import Davatar from "@davatar/react";
 import { useHistory } from "react-router-dom";
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
+import { VerticalAlignWrapper } from "../Wrapper/VerticalAlignWrapper";
 
 export function Avatar({
   account,
@@ -42,12 +43,7 @@ export function Avatar({
     // special button take you to the link
     <LinkBase
       onClick={() => window.open(entityLink, "_blank", "noopener,noreferrer")}
-      style={{
-        padding: 5,
-        // all child vertical aligned
-        display: "flex",
-        alignItems: "center",
-      }}
+      style={{ padding: 5 }}
     >
       <div
         style={{
@@ -61,29 +57,30 @@ export function Avatar({
     <LinkBase
       style={{
         padding: 5,
-        // all child vertical aligned
-        display: "flex",
-        alignItems: "center",
       }}
       onClick={goToAccount}
     >
-      <Davatar
-        address={account}
-        size={size}
-        style={{ borderRadius: 4 }}
-        provider={etherProvider}
-        generatedAvatarType="blockies"
-      />
-      {showAddress && (
-        <div
-          style={{
-            paddingLeft: 10,
-            color: theme.surfaceContentSecondary,
-          }}
-        >
-          {ens || shortenAddress}
-        </div>
-      )}
+      <VerticalAlignWrapper>
+        {account !== "" && (
+          <Davatar
+            address={account}
+            size={size}
+            style={{ borderRadius: 4 }}
+            provider={etherProvider}
+            generatedAvatarType="blockies"
+          />
+        )}
+        {showAddress && (
+          <div
+            style={{
+              paddingLeft: 7,
+              color: theme.surfaceContentSecondary,
+            }}
+          >
+            {ens || shortenAddress}
+          </div>
+        )}
+      </VerticalAlignWrapper>
     </LinkBase>
   );
 }

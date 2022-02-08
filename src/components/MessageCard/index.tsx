@@ -1,20 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { EtherscanTxWithParsedMessage } from "../../types";
+import { useHistory } from "react-router-dom";
+import { TwitterTweetEmbed } from "react-twitter-embed";
 import {
   Box,
   TransactionBadge,
-  ButtonBase,
+  LinkBase,
   useTheme,
   IconStar,
   IconStarFilled,
+  IconMaximize,
   useToast,
 } from "@aragon/ui";
+
+import { EtherscanTxWithParsedMessage } from "../../types";
 import { timeSince } from "../../utils/time";
 import { Body2 } from "../aragon";
 import { Avatar } from "../Avatar";
-import { TwitterTweetEmbed } from "react-twitter-embed";
 import { parseTwitterStatusId } from "../../utils/media";
 import { getLikedTxs, storeLikedTxs } from "../../utils/storage";
+import { VerticalAlignWrapper } from "../Wrapper/VerticalAlignWrapper";
 
 export function MessageCard({
   tx,
@@ -27,8 +31,9 @@ export function MessageCard({
   showMedia?: boolean;
   compact?: boolean;
 }) {
-  const [liked, setLiked] = useState(false);
+  const history = useHistory();
 
+  const [liked, setLiked] = useState(false);
   const recipient = useMemo(() => {
     return tx.adapterRecipient || tx.to;
   }, [tx]);
@@ -53,6 +58,10 @@ export function MessageCard({
     setLiked(isLiked);
   }, [tx.hash]);
 
+  const clickOnCard = useCallback(() => {
+    history.push(`/tx/${tx.hash}`);
+  }, [history, tx.hash]);
+
   const clickLike = useCallback(() => {
     const txs = getLikedTxs();
     const isLiked = txs.map((tx) => tx.hash).includes(tx.hash);
@@ -72,7 +81,7 @@ export function MessageCard({
   }, [tx, toast]);
 
   return tx.parsedMessage.length === 0 ? null : (
-    <Box>
+    <Box padding={15}>
       <div style={{ paddingBottom: "1%", position: "relative" }}>
         <div style={{ display: "flex" }}>
           <div
@@ -101,7 +110,7 @@ export function MessageCard({
             isSpecialEntity={!tx.adapterRecipientIsAddress}
             entityLink={tx.adapterRecipientLink}
           />
-          {adapterName && (
+          {!compact && adapterName && (
             <div style={{ marginTop: "auto", marginBottom: "auto" }}>
               through{" "}
               {
@@ -121,48 +130,57 @@ export function MessageCard({
         {/* buttons, fix at top right corner */}
         <div
           style={{
-            // all child vertical aligned
-            display: "flex",
-            alignItems: "center",
-
             // position at top right
             position: "absolute",
             top: 0,
             right: 0,
           }}
         >
-          {/* Like  or dislike a tx */}
-          <ButtonBase onClick={clickLike} style={{ display: "inline-block" }}>
-            {liked ? <IconStarFilled /> : <IconStar />}
-          </ButtonBase>
+          <VerticalAlignWrapper>
+            {/* Link To etherscan */}
+            <LinkBase
+              onClick={() =>
+                (window as any)
+                  .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
+                  .focus()
+              }
+            >
+              <TransactionBadge transaction={tx.hash} />
+            </LinkBase>
 
-          {/* Link To etherscan */}
-          <ButtonBase
-            style={{ display: "inline-block" }}
-            onClick={() =>
-              (window as any)
-                .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
-                .focus()
-            }
-          >
-            <TransactionBadge transaction={tx.hash} />
-          </ButtonBase>
+            {/* only show Like  or dislike when not in compact mode */}
+            {!compact && (
+              <LinkBase onClick={clickLike}>
+                {liked ? <IconStarFilled /> : <IconStar />}
+              </LinkBase>
+            )}
+
+            {/* only show detail button when not in compact mode  */}
+            {!compact && (
+              <LinkBase onClick={clickOnCard}>{<IconMaximize />}</LinkBase>
+            )}
+          </VerticalAlignWrapper>
         </div>
       </div>
-      <Body2
-        style={{
-          whiteSpace: "pre-line",
-        }}
-      >
-        {tx.parsedMessage}
+      <LinkBase onClick={clickOnCard} style={{ width: "100%" }}>
+        <Body2
+          style={{
+            textAlign: "start",
+            padding: 10,
+            whiteSpace: "pre-line",
+            overflow: "hidden",
+          }}
+        >
+          {tx.parsedMessage}
 
-        {/* show tweet embed */}
-        <div>
-          {showMedia && twitterStatusId && (
-            <TwitterTweetEmbed tweetId={twitterStatusId} />
-          )}
-        </div>
-      </Body2>
+          {/* show tweet embed */}
+          <div>
+            {showMedia && twitterStatusId && (
+              <TwitterTweetEmbed tweetId={twitterStatusId} />
+            )}
+          </div>
+        </Body2>
+      </LinkBase>
     </Box>
   );
 }
