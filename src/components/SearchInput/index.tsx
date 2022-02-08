@@ -40,7 +40,7 @@ export function SearchInput(props: any) {
   return (
     <div>
       <TextInput
-        placeholder="Search by Ethereum address or ENS"
+        placeholder="Search on-chain messages by address or ENS"
         value={input}
         onChange={(event) => setInput(event.target.value)}
         wide={true}

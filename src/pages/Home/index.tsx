@@ -1,6 +1,6 @@
 import React from "react";
 import { useTheme } from "@aragon/ui";
-import { Title1, Title3 } from "../../components/aragon";
+import { Body2, Title1, Title3 } from "../../components/aragon";
 import { SearchInput } from "../../components/SearchInput";
 import { getLikedTxs } from "../../utils/storage";
 import { MessageCard } from "../../components/MessageCard";
@@ -23,12 +23,15 @@ export function Home(props: any) {
     <div
       style={{
         display: "flex",
-        paddingTop: "1%",
+        paddingTop: "2%",
         alignItems: "center",
         justifyContent: "center",
+        flexDirection: "column",
         color: `${theme.surfaceContentSecondary}`,
       }}
     >
+      <Title1> Welcome to Pizzino! </Title1>
+
       <div
         style={{
           maxWidth: 650,
@@ -36,11 +39,9 @@ export function Home(props: any) {
           padding: 20,
         }}
       >
-        {/* eslint-disable-next-line jsx-a11y/accessible-emoji */}
-        <Title1> Welcome to Pizzino 🎫 </Title1>
         <br></br>
-        See what people are talking about on-chain.
-        <br />
+
+        <Body2 style={{ padding: 5 }}> Let's decode the blockchain. </Body2>
         <SearchInput />
         <br />
         <br />

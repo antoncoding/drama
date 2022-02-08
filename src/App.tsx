@@ -10,8 +10,10 @@ import { Main, Bar, ToastHub, ButtonBase } from "@aragon/ui";
 import { Account } from "./pages/Account";
 import { Transaction } from "./pages/Transaction";
 import { Home } from "./pages/Home";
-import { Title3 } from "./components/aragon";
+import { About } from "./pages/About";
+import { Body2, Title3 } from "./components/aragon";
 import { SearchInput } from "./components/SearchInput";
+import { VerticalAlignWrapper } from "./components/Wrapper/VerticalAlignWrapper";
 
 function SubApp() {
   const history = useHistory();
@@ -23,7 +25,7 @@ function SubApp() {
   return (
     <div>
       <Bar>
-        <div style={{ display: "flex", padding: 10 }}>
+        <VerticalAlignWrapper style={{ display: "flex", padding: 10 }}>
           <div>
             <ButtonBase onClick={() => history.push("/")}>
               <Title3> Pizzino </Title3>
@@ -35,8 +37,14 @@ function SubApp() {
               <SearchInput />
             </div>
           )}
-          {!isHomePage && <div style={{ marginLeft: "auto" }} />}
-        </div>
+          {
+            <div style={{ marginLeft: "auto", paddingRight: 18 }}>
+              <ButtonBase onClick={() => history.push("/about")}>
+                <Body2> Learn more </Body2>
+              </ButtonBase>
+            </div>
+          }
+        </VerticalAlignWrapper>
       </Bar>
       <Main>
         <Switch>
@@ -45,6 +53,9 @@ function SubApp() {
           </Route>
           <Route path="/tx/:hash">
             <Transaction />
+          </Route>
+          <Route path="/about">
+            <About />
           </Route>
           <Route path="/">
             <Home />
