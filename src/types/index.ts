@@ -1,21 +1,21 @@
 export type EtherscanTx = {
-  // blockHash: string;
+  blockHash: string;
   blockNumber: string;
-  // confirmations: string;
+  confirmations: string;
   contractAddress: "";
-  // cumulativeGasUsed: string;
+  cumulativeGasUsed: string;
   from: string;
-  // gas: string;
-  // gasPrice: string;
+  gas: string;
+  gasPrice: string;
   gasUsed: string;
   hash: string;
   input: string;
-  // isError: string;
-  // nonce: string;
+  isError: string;
+  nonce: string;
   timeStamp: string;
   to: string;
-  // transactionIndex: string;
-  // txreceipt_status: string;
+  transactionIndex: string;
+  txreceipt_status: string;
   value: string;
 };
 
