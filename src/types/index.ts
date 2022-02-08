@@ -1,25 +1,36 @@
 export type EtherscanTx = {
-  blockHash: string;
+  // blockHash: string;
   blockNumber: string;
-  confirmations: string;
+  // confirmations: string;
   contractAddress: "";
-  cumulativeGasUsed: string;
+  // cumulativeGasUsed: string;
   from: string;
-  gas: string;
-  gasPrice: string;
+  // gas: string;
+  // gasPrice: string;
   gasUsed: string;
   hash: string;
   input: string;
-  isError: string;
-  nonce: string;
+  // isError: string;
+  // nonce: string;
   timeStamp: string;
   to: string;
-  transactionIndex: string;
-  txreceipt_status: string;
+  // transactionIndex: string;
+  // txreceipt_status: string;
   value: string;
 };
 
-export type EtherscanTxWithParsedMessage = EtherscanTx & {
+export type EtherscanTxLite = {
+  blockNumber: string;
+  from: string;
+  gasUsed: string;
+  hash: string;
+  input: string;
+  timeStamp: string;
+  to: string;
+  value: string;
+};
+
+export type EtherscanTxWithParsedMessage = EtherscanTxLite & {
   parsedMessage: string;
   // if the message is parsed by adapter
   isAdapterTx: boolean;

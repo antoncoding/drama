@@ -1,9 +1,18 @@
 import Web3 from "web3";
-import { EtherscanTx, EtherscanTxWithParsedMessage } from "../types";
+import {
+  EtherscanTx,
+  EtherscanTxLite,
+  EtherscanTxWithParsedMessage,
+} from "../types";
 import ENS, { getEnsAddress } from "@ensdomains/ensjs";
 import { ethers, providers } from "ethers";
 
-import { storeContractMap, getStoredContractMap } from "./storage";
+import {
+  storeContractMap,
+  getStoredContractMap,
+  getStoredEtherscanTxs,
+  storeEtherscanTx,
+} from "./storage";
 import { spammers } from "./constant";
 import { adapterAddresses, parser } from "../adapters";
 
@@ -131,6 +140,8 @@ async function getParsedMessagesForContract(
       return tx.parsedMessage !== "";
     });
 
+  // store txs after filtering un-parsable transactions
+
   return txWithParsedMessage;
 }
 
@@ -178,35 +189,47 @@ async function getNewContractMap(toAddresses: string[]) {
  */
 export async function getTransactions(
   account: string,
-  earliestBlock = 2000000,
+  earliestBlock = 0,
   greedy = true
 ) {
-  let txs: EtherscanTx[] = [];
+  const accountLowercase = account.toLowerCase();
+  const currentBlock = await web3.eth.getBlockNumber();
+
+  // check if we have previously get this
+  let { endBlock: lastBlock, txs: oldTxs } =
+    getStoredEtherscanTxs(accountLowercase);
+
+  const startBlock = Math.max(earliestBlock, lastBlock);
 
   const endpoint =
-    `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=0&endblock=99999999&offset=10000&sort=asc
+    `https://api.etherscan.io/api?module=account&action=txlist&address=${accountLowercase}&startblock=${startBlock}&endblock=99999999&offset=10000&sort=asc
   &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
   const res = await fetch(endpoint);
 
-  txs = (await res.json()).result as EtherscanTx[];
+  let newTxs = (await res.json()).result as EtherscanTx[];
 
-  if (txs.length === 10000) {
+  if (newTxs.length === 10000) {
     // need to recursive search to get full history
-    txs = [];
-
-    const currentBlock = await web3.eth.getBlockNumber();
-    let endBlock = currentBlock;
+    newTxs = [];
 
     // in greedy search: we assume there won't be more than 10_000 tx in 50_000 block
     const batch = greedy ? 100_000 : 10_000;
 
-    let startBlock = endBlock - batch;
+    let roundEndBlock = currentBlock;
+    let roundStartBlock = roundEndBlock - batch;
+
     let searching = true;
 
     while (searching) {
-      console.log(`searching block ${startBlock} => ${endBlock}`);
+      if (roundStartBlock < startBlock) {
+        roundStartBlock = startBlock;
+        // end the loop after this round
+        searching = false;
+      }
+
+      console.log(`searching block ${roundStartBlock} => ${roundEndBlock}`);
       const pagedEndpoint =
-        `https://api.etherscan.io/api?module=account&action=txlist&address=${account}&startblock=${startBlock}&endblock=${endBlock}&offset=10000&page=1&sort=asc
+        `https://api.etherscan.io/api?module=account&action=txlist&address=${accountLowercase}&startblock=${roundStartBlock}&endblock=${roundEndBlock}&offset=10000&page=1&sort=asc
     &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
 
       const res = await fetch(pagedEndpoint);
@@ -218,20 +241,42 @@ export async function getTransactions(
           )
         : [];
 
-      endBlock = startBlock - 1;
-      startBlock = endBlock - batch;
+      roundEndBlock = roundStartBlock - 1;
+      roundStartBlock = roundEndBlock - batch;
 
-      txs = txs.concat(pageTxs);
-
-      if (startBlock < earliestBlock) searching = false;
+      newTxs = newTxs.concat(pageTxs);
     }
   }
 
-  const filtered = txs
+  newTxs = newTxs
     .filter((tx) => tx.contractAddress === "") // it's not a contract creation tx
     .filter((tx) => parseInt(tx.gasUsed) > 21000);
 
-  return filtered;
+  const txs = oldTxs.concat(newTxs);
+
+  // store the filtered txs
+  storeQueriesTxsForAddress(accountLowercase, currentBlock, txs);
+  return txs;
+}
+
+function storeQueriesTxsForAddress(
+  address: string,
+  latestBlock: number,
+  txs: EtherscanTxLite[]
+) {
+  const cleanedTx = txs.map((tx) => {
+    return {
+      blockNumber: tx.blockNumber,
+      from: tx.from,
+      gasUsed: tx.gasUsed,
+      hash: tx.hash,
+      input: tx.input,
+      timeStamp: tx.timeStamp,
+      to: tx.to,
+      value: tx.value,
+    };
+  });
+  storeEtherscanTx(address, { txs: cleanedTx, endBlock: latestBlock });
 }
 
 /**
