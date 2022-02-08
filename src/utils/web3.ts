@@ -201,8 +201,9 @@ export async function getTransactions(
 
   const startBlock = Math.max(earliestBlock, lastBlock);
 
+  console.log(`try querying ${startBlock} to ${currentBlock}`);
   const endpoint =
-    `https://api.etherscan.io/api?module=account&action=txlist&address=${accountLowercase}&startblock=${startBlock}&endblock=99999999&offset=10000&sort=asc
+    `https://api.etherscan.io/api?module=account&action=txlist&address=${accountLowercase}&startblock=${startBlock}&endblock=${currentBlock}&offset=10000&sort=asc
   &apikey=${process.env.REACT_APP_ETHERSCAN_KEY}`.replace("\n", "");
   const res = await fetch(endpoint);
 
