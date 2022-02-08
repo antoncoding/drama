@@ -3,9 +3,15 @@ import { TextInput, Button, IconSearch, useToast } from "@aragon/ui";
 import { useHistory } from "react-router-dom";
 import { parseENS, validate_addr, validate_txhash } from "../../utils/web3";
 import { useAsyncMemo } from "../../hooks/useAsyncMemo";
+import useWindowSize from "../../hooks/useWindowSize";
 
 export function SearchInput(props: any) {
   const toast = useToast();
+
+  const { width: screenWidth } = useWindowSize();
+
+  const isSmallScreen = useMemo(() => screenWidth < 600, [screenWidth]);
+
   const history = useHistory();
 
   const [input, setInput] = useState("");
@@ -40,10 +46,12 @@ export function SearchInput(props: any) {
   return (
     <div>
       <TextInput
-        placeholder="Search on-chain messages by address or ENS"
+        placeholder={
+          !isSmallScreen && "Search on-chain messages by address or ENS"
+        }
         value={input}
         onChange={(event) => setInput(event.target.value)}
-        wide={true}
+        wide={!isSmallScreen}
         adornmentPosition={"end"}
         adornment={
           <Button

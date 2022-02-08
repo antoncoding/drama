@@ -19,6 +19,7 @@ import { Avatar } from "../Avatar";
 import { parseTwitterStatusId } from "../../utils/media";
 import { getLikedTxs, storeLikedTxs } from "../../utils/storage";
 import { VerticalAlignWrapper } from "../Wrapper/VerticalAlignWrapper";
+import useWindowSize from "../../hooks/useWindowSize";
 
 export function MessageCard({
   tx,
@@ -32,6 +33,10 @@ export function MessageCard({
   compact?: boolean;
 }) {
   const history = useHistory();
+
+  const { width: screenWidth } = useWindowSize();
+
+  const isSmallScreen = useMemo(() => screenWidth < 600, [screenWidth]);
 
   const [liked, setLiked] = useState(false);
   const recipient = useMemo(() => {
@@ -99,14 +104,14 @@ export function MessageCard({
             account={tx.from}
             scale={1}
             size={30}
-            showAddress={!compact}
+            showAddress={!compact && !isSmallScreen}
           />
           <div style={{ marginTop: "auto", marginBottom: "auto" }}> to </div>
           <Avatar
             account={recipient}
             scale={1}
             size={30}
-            showAddress={!compact}
+            showAddress={!compact && !isSmallScreen}
             isSpecialEntity={!tx.adapterRecipientIsAddress}
             entityLink={tx.adapterRecipientLink}
           />
@@ -121,10 +126,12 @@ export function MessageCard({
               }
             </div>
           )}
-          <div style={{ marginTop: "auto", marginBottom: "auto" }}>
-            {" "}
-            - {timeSince(parseInt(tx.timeStamp))}{" "}
-          </div>
+          {!isSmallScreen && (
+            <div style={{ marginTop: "auto", marginBottom: "auto" }}>
+              {" "}
+              - {timeSince(parseInt(tx.timeStamp))}{" "}
+            </div>
+          )}
         </div>
 
         {/* buttons, fix at top right corner */}
@@ -138,18 +145,20 @@ export function MessageCard({
         >
           <VerticalAlignWrapper>
             {/* Link To etherscan */}
-            <LinkBase
-              onClick={() =>
-                (window as any)
-                  .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
-                  .focus()
-              }
-            >
-              <TransactionBadge transaction={tx.hash} />
-            </LinkBase>
+            {!isSmallScreen && (
+              <LinkBase
+                onClick={() =>
+                  (window as any)
+                    .open(`https://etherscan.io/tx/${tx.hash}`, "_blank")
+                    .focus()
+                }
+              >
+                <TransactionBadge transaction={tx.hash} />
+              </LinkBase>
+            )}
 
             {/* only show Like  or dislike when not in compact mode */}
-            {!compact && (
+            {!compact && !isSmallScreen && (
               <LinkBase onClick={clickLike}>
                 {liked ? <IconStarFilled /> : <IconStar />}
               </LinkBase>
