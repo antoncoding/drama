@@ -34,21 +34,22 @@ export function SearchInput(props: any) {
 
   const handleClick = useCallback(() => {
     if (inputIsAddress) {
+      console.log(`jj`);
       history.push(`/account/${input}`);
-    } else if (reversed !== undefined) {
+    } else if (reversed) {
+      console.log(`here`);
       history.push(`/account/${reversed}`);
     } else if (inputIsTransaction) {
-      toast("Transaction page coming soon!");
-      // history.push(`/tx/${input}`)
+      history.push(`/tx/${input}`);
+    } else {
+      toast("Invalid Input!");
     }
   }, [inputIsAddress, inputIsTransaction, history, input, toast, reversed]);
 
   return (
     <div>
       <TextInput
-        placeholder={
-          !isSmallScreen && "Search on-chain messages by address or ENS"
-        }
+        placeholder={!isSmallScreen && "Search by address, ENS or tx hash."}
         value={input}
         onChange={(event) => setInput(event.target.value)}
         wide={!isSmallScreen}
